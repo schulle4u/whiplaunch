@@ -1,6 +1,8 @@
 # ATMIRAL
 Accessible text-based menu interface for running applications on Linux
 
+🌐 [Deutsch](./README-de.md) | English
+
 ## Description
 
 ATMIRAL (short for "Accessible text-based menu interface for running applications on Linux") is a user-friendly start menu for the Linux shell, allowing you to quickly access frequently used programs and commands. The menu can be customised using a folder structure with human-readable text files, making it adaptable to any Linux system. It is ideal for beginners, helping them to overcome their fear of entering commands, and for those who prefer to restrict certain processes to a specific working environment. However, it is not intended to replace command input or a complete graphical user interface. The following modules are currently available: 
