@@ -1,7 +1,11 @@
 # ATMIRAL
 Barrierefreies textbasiertes Menü zum Starten von Programmen unter Linux
 
-<p align="right">🌐 <a href="./README-de.md">Deutsch</a> &nbsp; <a href="./README.md">English</a></p>
+<p align="right">
+
+🌐 [Deutsch](./README-de.md) | [English](./README.md)
+
+</p>
 
 ## Beschreibung
 
