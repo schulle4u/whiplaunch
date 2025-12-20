@@ -1,11 +1,7 @@
 # ATMIRAL
 Accessible text-based menu interface for running applications on Linux
 
-<p align="right">
-
-🌐 [Deutsch](./README-de.md) | [English](./README.md)
-
-</p>
+<span align="right">🌐 [Deutsch](./README-de.md) | [English](./README.md)</span>
 
 ## Description
 
