@@ -66,6 +66,10 @@ check_dependencies() {
         missing_deps+=("dialog")
     fi
     
+    if ! command -v gettext >/dev/null 2>&1; then
+        missing_deps+=("gettext")
+    fi
+
     if [[ ${#missing_deps[@]} -gt 0 ]]; then
         print_error "Missing dependencies: ${missing_deps[*]}"
         print_info "Install with: sudo apt install ${missing_deps[*]}"
@@ -79,7 +83,8 @@ check_source_files() {
     
     [[ ! -f "$SCRIPT_DIR/${PROGRAM_NAME}.sh" ]] && missing_files+=("${PROGRAM_NAME}.sh")
     [[ ! -f "$SCRIPT_DIR/atmiralfm.sh" ]] && missing_files+=("atmiralfm.sh")
-    [[ ! -d "$SCRIPT_DIR/lang" ]] && missing_files+=("lang/")
+    [[ ! -f "$SCRIPT_DIR/lib/i18n.sh" ]] && missing_files+=("lib/i18n.sh")
+    [[ ! -f "$SCRIPT_DIR/locale/de/LC_MESSAGES/atmiral.mo" ]] && missing_files+=("locale/de/LC_MESSAGES/atmiral.mo")
     [[ ! -d "$SCRIPT_DIR/menu" ]] && missing_files+=("menu/")
     
     if [[ ${#missing_files[@]} -gt 0 ]]; then
@@ -133,7 +138,7 @@ install_system() {
     # Create directories
     create_dir "/usr/local/bin"
     create_dir "/usr/local/share/${PROGRAM_NAME}"
-    create_dir "/usr/local/share/${PROGRAM_NAME}/lang"
+    create_dir "/usr/local/share/locale/de/LC_MESSAGES"
     create_dir "/usr/local/share/${PROGRAM_NAME}/menu"
     create_dir "/etc/${PROGRAM_NAME}"
     
@@ -143,12 +148,11 @@ install_system() {
     # Install file browser
     copy_file "$SCRIPT_DIR/atmiralfm.sh" "/usr/local/bin/atmiralfm" 755
     
-    # Install language files
-    for lang_file in "$SCRIPT_DIR"/lang/*.sh; do
-        [[ -f "$lang_file" ]] || continue
-        copy_file "$lang_file" "/usr/local/share/${PROGRAM_NAME}/lang/"
-    done
-    
+    # Install gettext runtime and compiled catalog
+    create_dir "/usr/local/share/${PROGRAM_NAME}/lib"
+    copy_file "$SCRIPT_DIR/lib/i18n.sh" "/usr/local/share/${PROGRAM_NAME}/lib/" 644
+    copy_file "$SCRIPT_DIR/locale/de/LC_MESSAGES/atmiral.mo" "/usr/local/share/locale/de/LC_MESSAGES/" 644
+
     # Install example menu files
     for menu_file in "$SCRIPT_DIR"/menu/*.txt; do
         [[ -f "$menu_file" ]] || continue
@@ -175,7 +179,7 @@ install_user() {
     # Create directories
     create_dir "$HOME/.local/bin"
     create_dir "$HOME/.local/share/${PROGRAM_NAME}"
-    create_dir "$HOME/.local/share/${PROGRAM_NAME}/lang"
+    create_dir "$HOME/.local/share/locale/de/LC_MESSAGES"
     create_dir "$HOME/.local/share/${PROGRAM_NAME}/menu"
     create_dir "$HOME/.config/${PROGRAM_NAME}"
     create_dir "$HOME/.config/${PROGRAM_NAME}/menu"
@@ -186,12 +190,11 @@ install_user() {
     # Install file browser
     copy_file "$SCRIPT_DIR/atmiralfm.sh" "$HOME/.local/bin/atmiralfm" 755
     
-    # Install language files
-    for lang_file in "$SCRIPT_DIR"/lang/*.sh; do
-        [[ -f "$lang_file" ]] || continue
-        copy_file "$lang_file" "$HOME/.local/share/${PROGRAM_NAME}/lang/"
-    done
-    
+    # Install gettext runtime and compiled catalog
+    create_dir "$HOME/.local/share/${PROGRAM_NAME}/lib"
+    copy_file "$SCRIPT_DIR/lib/i18n.sh" "$HOME/.local/share/${PROGRAM_NAME}/lib/" 644
+    copy_file "$SCRIPT_DIR/locale/de/LC_MESSAGES/atmiral.mo" "$HOME/.local/share/locale/de/LC_MESSAGES/" 644
+
     # Install example menu files
     for menu_file in "$SCRIPT_DIR"/menu/*.txt; do
         [[ -f "$menu_file" ]] || continue

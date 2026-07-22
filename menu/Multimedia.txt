@@ -1,9 +1,9 @@
 Name: MPV
-Beschreibung: Medienplayer
-Befehl: mpv
-Argumente: <Dateiname>
+Description: Medienplayer
+Command: mpv
+Arguments: <File>
 
 Name: Sprachausgabe
-Beschreibung: Eingegebenen Text sprechen
-Befehl: espeak-ng
-Argumente: -v de -a 100 -s 300 "<Text>"
+Description: Eingegebenen Text sprechen
+Command: espeak-ng
+Arguments: -v de -a 100 -s 300 "<Text>"

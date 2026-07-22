@@ -11,33 +11,33 @@ Accessible text-based menu interface for running applications on Linux
 
 [![Screenshot](./screenshot.png)](./screenshot.png)
 
-ATMIRAL (short for "Accessible text-based menu interface for running applications on Linux") is a user-friendly start menu for the Linux shell, allowing you to quickly access frequently used programs and commands. The menu can be customised using a folder structure with human-readable text files, making it adaptable to any Linux system. It is ideal for beginners, helping them to overcome their fear of entering commands, and for those who prefer to restrict certain processes to a specific working environment. However, it is not intended to replace command input or a complete graphical user interface. The following modules are currently available: 
+ATMIRAL (short for "Accessible text-based menu interface for running applications on Linux") is a user-friendly start menu for the Linux shell, allowing you to quickly access frequently used programs and commands. The menu can be customised using a folder structure with human-readable text files, making it adaptable to any Linux system. It is ideal for beginners, helping them to overcome their fear of entering commands, and for those who prefer to restrict certain processes to a specific working environment. However, it is not intended to replace command input or a complete graphical user interface. The following modules are currently available:
 
 * ATMIRAL (`atmiral.sh`): The main program with customizable sets of commands.
-* ATMIRAL File Browser (`atmiralfm.sh`): A simple file browser to list and open files. 
+* ATMIRAL File Browser (`atmiralfm.sh`): A simple file browser to list and open files.
 
 ## Installation
 
-Clone the repository and make `install.sh` executable. 
+Clone the repository and make `install.sh` executable.
 
 ```
 chmod +x ./install.sh
 ```
 
-The following installation options are available: 
+The following installation options are available:
 
 * `./install.sh --user`: install for current user.
-* `sudo ./install.sh --system`: install system-wide, requires root permissions. 
-* `sudo ./install.sh --both`: install system-wide and for current user, requires root permissions. 
-* `sudo ./install.sh --uninstall`: uninstall ATMIRAL, could require root permissions. 
+* `sudo ./install.sh --system`: install system-wide, requires root permissions.
+* `sudo ./install.sh --both`: install system-wide and for current user, requires root permissions.
+* `sudo ./install.sh --uninstall`: uninstall ATMIRAL, could require root permissions.
 
-All modules are available in the respective installation environment, e.g. `atmiral` for the main program or `atmiralfm` for the file browser. You can also run ATMIRAL by calling `./atmiral.sh`  in the script's directory, in case you prefer not to install it. 
+All modules are available in the respective installation environment, e.g. `atmiral` for the main program or `atmiralfm` for the file browser. You can also run ATMIRAL by calling `./atmiral.sh`  in the script's directory, in case you prefer not to install it.
 
 ## Using the main program
 
 ### Menu directories
 
-Menu files are found in the following directories, descending priority: 
+Menu files are found in the following directories, descending priority:
 
 * Userdefined: call `atmiral <Pfad>`
 * In your home folder: `$HOME/.local/share/atmiral/menu/`
@@ -46,20 +46,20 @@ Menu files are found in the following directories, descending priority:
 
 ### Creating menus
 
-A menu file consists of configuration sections separated by a blank line. Each configuration section can contain the following fields: 
+A menu file consists of configuration sections separated by a blank line. Each configuration section can contain the following fields:
 
 * Name: Display name of the program or command (not the actual command)
 * Description: Short description, displayed to the right.
 * Command: The actual command that is called  from the menu entry.
 * Arguments: Any type of fixed or dynamic command options. The text between `<` and `>` is recognized as a placeholder and the menu prompts for user input when the command is called.
 
-The following placeholders are available to open special dialog boxes: 
+The following placeholders are available to open special dialog boxes:
 
 * `<File>`: Opens a file selection dialog.
 * `<Directory>`: Opens a directory selection.
 * `<Password>`: Input box for passwords.
 
-**Note**: The field names and placeholders above can be translated into any language. If ATMIRAL is being used in a language other than English, the field names and placeholders must also be specified in that language, provided they have been translated in the relevant language file. 
+**Note**: Menu field names and special placeholders are locale-independent and must use the English keywords shown above. The interface is translated separately through GNU gettext.
 
 ### Example
 
@@ -98,19 +98,19 @@ Once you have started ATMIRAL, the files and subfolders that have been created i
 
 ### Configuration
 
-Some configuration options are available in the file `atmiral.conf`: 
+Some configuration options are available in the file `atmiral.conf`:
 
-* `ATMIRAL_LANG`: Interface language (language file name without file extension, e.g. `en`). 
+* `ATMIRAL_LANG`: Optional gettext language override (for example `de`). Leave empty to use the system locale.
 * `COMMAND_DEBUG`: Set 1 to turn on command output.
 
 If you prefer the menu to have a dark colour scheme, you will find a sample `.dialogrc` file in this folder which you can copy into your home directory. It contains the colours for dark mode and also sets the `visit_items` option to `ON` to enable better keyboard operation. However, this option is already set in the script when the menu is defined.
 
 ## File browser
 
-The Admiral file browser can be launched using the command `atmiralfm` or `atmiralfm.sh` in the script directory. The home directory of the current user is set as the start directory by default. A different start directory can be specified as an argument when calling `atmiralfm`. Navigating through files and folders is straightforward and can be done using the up and down arrow keys, or by entering the first letter of an entry and confirming with the Enter key. As with many file managers, there is an option at the top of each list to move to the parent folder. In the top-left corner of the screen is a status bar similar to the shell prompt which displays the user and host name, as well as the current folder path. 
+The Admiral file browser can be launched using the command `atmiralfm` or `atmiralfm.sh` in the script directory. The home directory of the current user is set as the start directory by default. A different start directory can be specified as an argument when calling `atmiralfm`. Navigating through files and folders is straightforward and can be done using the up and down arrow keys, or by entering the first letter of an entry and confirming with the Enter key. As with many file managers, there is an option at the top of each list to move to the parent folder. In the top-left corner of the screen is a status bar similar to the shell prompt which displays the user and host name, as well as the current folder path.
 
 After selecting a file, or by pressing the actions button, a menu opens offering various options for the selected file or directory. The display may vary depending on the file type and installed packages. The following options are available:
- 
+
 * Open directory
 * Open file (text, audio/video, images)
 * Custom: Allows to enter a custom command to open the file.
@@ -123,14 +123,24 @@ After selecting a file, or by pressing the actions button, a menu opens offering
 
 ### File browser configuration
 
-The following options are available in `atmiral.conf`: 
+The following options are available in `atmiral.conf`:
 
 * `SHOW_HIDDEN`: Show hidden files and directories
 * `DEFAULT_EDITOR`: Default text editor, e.g. nano or vim
 * `DEFAULT_VIEWER`: Default file viewer, e.g. less, more, w3m.
-* `DEFAULT_PLAYER`: Default media player, e.g. mpv, vlc. 
-* `DEFAULT_IMG_VIEWER`: Default image viewer, e.g. feh. 
+* `DEFAULT_PLAYER`: Default media player, e.g. mpv, vlc.
+* `DEFAULT_IMG_VIEWER`: Default image viewer, e.g. feh.
+
+## Translations
+
+User-facing messages are translated directly at their point of use with `_ "..."`. To update the catalogs after changing or adding messages, run:
+
+```sh
+xgettext --language=Shell --keyword=_ --from-code=UTF-8 -o po/atmiral.pot atmiral.sh atmiralfm.sh
+msgmerge --update --backup=none po/de.po po/atmiral.pot
+msgfmt --check --check-format -o locale/de/LC_MESSAGES/atmiral.mo po/de.po
+```
 
 ## Development
 
-Copyright (C) 2025 Steffen Schultz, released under the terms of the MIT license. 
+Copyright (C) 2025 Steffen Schultz, released under the terms of the MIT license.

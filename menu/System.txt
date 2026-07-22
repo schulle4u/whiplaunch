@@ -1,26 +1,26 @@
 Name: Top
-Beschreibung: Systemmonitor
-Befehl: top
+Description: Systemmonitor
+Command: top
 
 Name: Uptime
-Beschreibung: Zeigt Systemlaufzeit
-Befehl: dialog --no-lines --title "uptime" --msgbox "$(uptime)" 10 70
+Description: Zeigt Systemlaufzeit
+Command: dialog --no-lines --title "uptime" --msgbox "$(uptime)" 10 70
 
 Name: Updates
-Beschreibung: Nach Updates suchen
-Befehl: sudo apt update && sudo apt upgrade
+Description: Nach Updates suchen
+Command: sudo apt update && sudo apt upgrade
 
 Name: Dienststeuerung
-Beschreibung: Dienststeuerung
-Befehl: sudo systemctl
-Argumente: <Aktion> <Dienst>
+Description: Dienststeuerung
+Command: sudo systemctl
+Arguments: <Aktion> <Dienst>
 
 Name: Verzeichnis auflisten
-Beschreibung: Zeigt Dateien in einem Verzeichnis
-Befehl: ls
-Argumente: -la <verzeichnis>
+Description: Zeigt Dateien in einem Verzeichnis
+Command: ls
+Arguments: -la <Directory>
 
 Name: Datei suchen
-Beschreibung: Sucht nach Dateien
-Befehl: find
-Argumente: <pfad> -name "<muster>" -type f
+Description: Sucht nach Dateien
+Command: find
+Arguments: <pfad> -name "<muster>" -type f

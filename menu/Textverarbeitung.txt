@@ -1,4 +1,4 @@
 Name: Nano
-Beschreibung: Einfacher Texteditor
-Befehl: nano
-Argumente: <Datei>
+Description: Einfacher Texteditor
+Command: nano
+Arguments: <File>

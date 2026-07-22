@@ -8,7 +8,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default configuration values
-ATMIRAL_LANG="de"
+ATMIRAL_LANG=""
 COMMAND_DEBUG=0
 
 # Load config file
@@ -38,85 +38,28 @@ if [ -n "$CONFIG_FILE" ]; then
     fi
 fi
 
-# Load language file
-load_language_file() {
-    local lang_file="$1"
-    
-    if [[ ! -f "$lang_file" ]]; then
-        return 1
-    fi
-    
-    if [[ ! -r "$lang_file" ]]; then
-        echo "Error: Cannot read language file '$lang_file'." >&2
-        return 1
-    fi
-    
-    # Load the language file safely
-    if ! (set -e; source "$lang_file" >/dev/null 2>&1); then
-        echo "Error: Invalid syntax in language file '$lang_file'." >&2
-        return 1
-    fi
-
-    source "$lang_file"
-
-    # Validate critical variables are set
-    local required_vars=(
-        "MSG_ERROR_DIALOG_MISSING"
-        "UI_TITLE"
-        "UI_MENU_PROMPT"
-        "UI_OK_BUTTON"
-        "UI_CANCEL_BUTTON"
-        "UI_BACK_OPTION"
-        "UI_BACK_DESCRIPTION"
-        "MSG_PRESS_ENTER"
-        "FIELD_NAME_PATTERN"
-        "FIELD_DESC_PATTERN"
-        "FIELD_CMD_PATTERN"
-        "FIELD_ARGS_PATTERN"
-        "PLACEHOLDER_FILE_SELECT"
-        "PLACEHOLDER_DIR_SELECT"
-        "PLACEHOLDER_PASSWORD_SELECT"
-    )
-    
-    local missing_vars=()
-    for var in "${required_vars[@]}"; do
-        if [[ -z "${!var:-}" ]]; then
-            missing_vars+=("$var")
-        fi
-    done
-    
-    if [[ ${#missing_vars[@]} -gt 0 ]]; then
-        echo "Error: Language file '$lang_file' is missing required variables:" >&2
-        printf "  %s\n" "${missing_vars[@]}" >&2
-        return 1
-    fi
-    
-    return 0
-}
-
-if [[ -d "/usr/local/share/atmiral/lang/" ]]; then
-    LANGDIR="/usr/local/share/atmiral/lang/"
-elif [[ -d "$HOME/.local/share/atmiral/lang/" ]]; then
-    LANGDIR="$HOME/.local/share/atmiral/lang/"
-else
-    LANGDIR="$SCRIPT_DIR/lang/"
+# Initialize GNU gettext after loading configuration.
+# shellcheck source=lib/i18n.sh
+I18N_LIB="$SCRIPT_DIR/lib/i18n.sh"
+if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="$HOME/.local/share/atmiral/lib/i18n.sh"; fi
+if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="/usr/local/share/atmiral/lib/i18n.sh"; fi
+if [[ ! -r "$I18N_LIB" ]]; then
+    echo "Error: Cannot load the ATMIRAL gettext runtime." >&2
+    exit 1
 fi
-
-LANG_FILE="${LANGDIR}/${ATMIRAL_LANG}.sh"
-if ! load_language_file "$LANG_FILE"; then
-    # Fallback to english
-    LANG_FILE="${LANGDIR}/en.sh"
-    if ! load_language_file "$LANG_FILE"; then
-        echo "Error: No valid language file found." >&2
-        exit 1
-    fi
+# shellcheck source=lib/i18n.sh
+source "$I18N_LIB"
+if ! command -v gettext >/dev/null 2>&1; then
+    echo "Error: GNU gettext is required." >&2
+    exit 1
 fi
+atmiral_init_i18n "$SCRIPT_DIR" "$ATMIRAL_LANG"
 
 # Dependency Check
 check_dependencies() {
     if ! command -v dialog >/dev/null 2>&1; then
-        printf "%s\n" "$MSG_ERROR_DIALOG_MISSING" >&2
-        printf "%s\n" "$MSG_ERROR_DIALOG_INSTALL" >&2
+        printf "%s\n" "$(_ "Error: dialog is not installed.")" >&2
+        printf "%s\n" "$(_ "Install using e.g.: sudo apt install dialog")" >&2
         exit 1
     fi
 }
@@ -125,9 +68,9 @@ check_dependencies
 
 # Set initial options for dialog
 export DIALOGOPTS="--visit-items --no-lines \
-    --backtitle \"$UI_TITLE - ${USER}@${HOSTNAME}\" \
-    --ok-label \"$UI_OK_BUTTON\" \
-    --cancel-label \"$UI_CANCEL_BUTTON\""
+    --backtitle \"$(_ "ATMIRAL") - ${USER}@${HOSTNAME}\" \
+    --ok-label \"$(_ "OK")\" \
+    --cancel-label \"$(_ "Cancel")\""
 
 # Looking for menu list files
 if [[ -n "${1:-}" && -d "$1" ]]; then
@@ -142,7 +85,7 @@ fi
 
 # Validate if directory exists
 if [[ ! -d "$MENUDIR" ]]; then
-    printf "$MSG_ERROR_MENUDIR_NOT_EXISTS\n" "$MENUDIR" >&2
+    printf "$(_ "Error: Menu directory '%s' doesn't exist.")\n" "$MENUDIR" >&2
     exit 1
 fi
 
@@ -151,12 +94,12 @@ parse_menufile() {
     local menufile="$1"
     
     if [[ ! -f "$menufile" ]]; then
-        printf "$MSG_WARNING_FILE_NOT_FOUND\n" "$menufile" >&2
+        printf "$(_ "Warning: File '%s' not found.")\n" "$menufile" >&2
         return 1
     fi
     
     if [[ ! -r "$menufile" ]]; then
-        printf "$MSG_WARNING_FILE_NOT_READABLE\n" "$menufile" >&2
+        printf "$(_ "Warning: File '%s' not readable.")\n" "$menufile" >&2
         return 1
     fi
     
@@ -178,28 +121,28 @@ parse_menufile() {
         [[ -z "$line" ]] && continue
         
         # Parse key-value pairs using localized patterns
-        if [[ "$line" =~ $FIELD_NAME_PATTERN ]]; then
+        if [[ "$line" =~ ^[Nn]ame:[[:space:]]* ]]; then
             # Save previous entry if complete
             if [[ -n "$current_name" && -n "$current_cmd" ]]; then
                 PARSED+=("$current_name" "$current_desc" "$current_cmd" "$current_args")
             fi
             # Start new entry
-            current_name=$(echo "$line" | sed "s/$FIELD_NAME_PATTERN//")
+            current_name=$(echo "$line" | sed "s/^[Nn]ame:[[:space:]]*//")
             current_desc=""
             current_cmd=""
             current_args=""
             
-        elif [[ "$line" =~ $FIELD_DESC_PATTERN ]]; then
-            current_desc=$(echo "$line" | sed "s/$FIELD_DESC_PATTERN//")
+        elif [[ "$line" =~ ^[Dd]escription:[[:space:]]* ]]; then
+            current_desc=$(echo "$line" | sed "s/^[Dd]escription:[[:space:]]*//")
             
-        elif [[ "$line" =~ $FIELD_CMD_PATTERN ]]; then
-            current_cmd=$(echo "$line" | sed "s/$FIELD_CMD_PATTERN//")
+        elif [[ "$line" =~ ^[Cc]ommand:[[:space:]]* ]]; then
+            current_cmd=$(echo "$line" | sed "s/^[Cc]ommand:[[:space:]]*//")
             
-        elif [[ "$line" =~ $FIELD_ARGS_PATTERN ]]; then
-            current_args=$(echo "$line" | sed "s/$FIELD_ARGS_PATTERN//")
+        elif [[ "$line" =~ ^[Aa]rguments:[[:space:]]* ]]; then
+            current_args=$(echo "$line" | sed "s/^[Aa]rguments:[[:space:]]*//")
             
         else
-            printf "$MSG_WARNING_UNKNOWN_FORMAT\n" "$line_number" "$line" >&2
+            printf "$(_ "Warning: Unknown format on line %d: '%s'")\n" "$line_number" "$line" >&2
         fi
     done < "$menufile"
     
@@ -209,7 +152,7 @@ parse_menufile() {
     fi
     
     if [[ ${#PARSED[@]} -eq 0 ]]; then
-        printf "$MSG_WARNING_NO_VALID_ENTRIES\n" "$menufile" >&2
+        printf "$(_ "Warning: No valid entries found in '%s'.")\n" "$menufile" >&2
         return 1
     fi
     
@@ -236,11 +179,11 @@ execute_command() {
                 local dialog_type="inputbox"  # default
                 
                 # Determine dialog type based on placeholder content
-                if [[ "$placeholder" =~ $PLACEHOLDER_FILE_SELECT ]]; then
+                if [[ "$placeholder" =~ ^[Ff]ile ]]; then
                     dialog_type="fselect"
-                elif [[ "$placeholder" =~ $PLACEHOLDER_DIR_SELECT ]]; then
+                elif [[ "$placeholder" =~ ^[Dd]irectory ]]; then
                     dialog_type="dselect"
-                elif [[ "$placeholder" =~ $PLACEHOLDER_PASSWORD_SELECT ]]; then
+                elif [[ "$placeholder" =~ ^[Pp]assword ]]; then
                     dialog_type="passwordbox"
                 fi
                 
@@ -252,8 +195,8 @@ execute_command() {
                             user_input="${user_input%/}"
                         else
                             clear
-                            printf "%s\n" "$MSG_CANCELLED"
-                            printf "%s" "$MSG_PRESS_ENTER"
+                            printf "%s\n" "$(_ "Aborted.")"
+                            printf "%s" "$(_ "Press enter to return...")"
                             read -r
                             return 1
                         fi
@@ -264,33 +207,33 @@ execute_command() {
                             [[ "$user_input" != */ ]] && user_input="${user_input}/"
                         else
                             clear
-                            printf "%s\n" "$MSG_CANCELLED"
-                            printf "%s" "$MSG_PRESS_ENTER"
+                            printf "%s\n" "$(_ "Aborted.")"
+                            printf "%s" "$(_ "Press enter to return...")"
                             read -r
                             return 1
                         fi
                         ;;
                     "passwordbox")
-                        if user_input=$(dialog --insecure --passwordbox "$(printf "$UI_INPUT_PROMPT" "$placeholder")" 10 60 3>&1 1>&2 2>&3); then
+                        if user_input=$(dialog --insecure --passwordbox "$(printf "$(_ "Please enter '%s':")" "$placeholder")" 10 60 3>&1 1>&2 2>&3); then
                             # Password input successful
                             :
                         else
                             clear
-                            printf "%s\n" "$MSG_CANCELLED"
-                            printf "%s" "$MSG_PRESS_ENTER"
+                            printf "%s\n" "$(_ "Aborted.")"
+                            printf "%s" "$(_ "Press enter to return...")"
                             read -r
                             return 1
                         fi
                         ;;
                     *)
                         # Default inputbox for unrecognized placeholders
-                        if user_input=$(dialog --inputbox "$(printf "$UI_INPUT_PROMPT" "$placeholder")" 10 60 3>&1 1>&2 2>&3); then
+                        if user_input=$(dialog --inputbox "$(printf "$(_ "Please enter '%s':")" "$placeholder")" 10 60 3>&1 1>&2 2>&3); then
                             # Input successful
                             :
                         else
                             clear
-                            printf "%s\n" "$MSG_CANCELLED"
-                            printf "%s" "$MSG_PRESS_ENTER"
+                            printf "%s\n" "$(_ "Aborted.")"
+                            printf "%s" "$(_ "Press enter to return...")"
                             read -r
                             return 1
                         fi
@@ -311,22 +254,22 @@ execute_command() {
     
     clear
     if [[ "$COMMAND_DEBUG" == "1" ]]; then
-        printf "$MSG_STARTING_COMMAND\n" "$full_command"
-        printf "%s\n" "$MSG_SEPARATOR"
+        printf "$(_ "Running: %s")\n" "$full_command"
+        printf '%s\n' '----------------------------------------'
     fi
     
     # Use bash -c instead of eval for better safety
     if bash -c "$full_command"; then
-        printf "%s\n" "$MSG_SEPARATOR"
-        printf "%s\n" "$MSG_COMMAND_SUCCESS"
+        printf '%s\n' '----------------------------------------'
+        printf "%s\n" "$(_ "Command executed successfully.")"
     else
         local exit_code=$?
-        printf "%s\n" "$MSG_SEPARATOR"
-        printf "$MSG_COMMAND_ERROR\n" "$exit_code"
+        printf '%s\n' '----------------------------------------'
+        printf "$(_ "Error while executing command (Exit Code: %d).")\n" "$exit_code"
     fi
     
     printf "\n"
-    printf "%s" "$MSG_PRESS_ENTER"
+    printf "%s" "$(_ "Press enter to return...")"
     read -r
 }
 
@@ -335,13 +278,13 @@ run_textmenu() {
     local menufile="$1"
     
     if ! parse_menufile "$menufile"; then
-        dialog --msgbox "$(printf "$UI_ERROR_LOADING_FILE" "$menufile")" 10 70
+        dialog --msgbox "$(printf "$(_ "Error loading file:\\n%s")" "$menufile")" 10 70
         clear
         return 1
     fi
     
     if [[ ${#PARSED[@]} -eq 0 ]]; then
-        dialog --msgbox "$(printf "$UI_ERROR_NO_ENTRIES" "$menufile")" 10 70
+        dialog --msgbox "$(printf "$(_ "No valid entries in:\\n%s")" "$menufile")" 10 70
         clear
         return 1
     fi
@@ -358,11 +301,11 @@ run_textmenu() {
         clear
         local choice
         choice=$(dialog --begin 3 1 \
-            --title "$UI_LIST_TITLE" \
-            --ok-label "$UI_SELECT_BUTTON" \
-            --cancel-label "$UI_EXIT_BUTTON" \
-            --menu "$UI_MENU_PROMPT" 0 0 0 \
-            "$UI_BACK_OPTION" "$UI_BACK_DESCRIPTION" \
+            --title "$(_ "List contents")" \
+            --ok-label "$(_ "Select")" \
+            --cancel-label "$(_ "Exit")" \
+            --menu "$(_ "Please select an item and press enter to confirm, escape to exit ATMIRAL:")" 0 0 0 \
+            "$(_ "...")" "$(_ "Parent level")" \
             "${display_entries[@]}" \
             3>&1 1>&2 2>&3)
 
@@ -373,7 +316,7 @@ run_textmenu() {
         fi
 
         # Back to parent menu
-        if [[ "$choice" == "$UI_BACK_OPTION" ]]; then
+        if [[ "$choice" == "$(_ "...")" ]]; then
             return 0
         fi
 
@@ -393,7 +336,7 @@ run_menu() {
     local current_dir="$1"
     
     if [[ ! -d "$current_dir" ]]; then
-        printf "$MSG_ERROR_MENUDIR_NOT_EXISTS\n" "$current_dir" >&2
+        printf "$(_ "Error: Menu directory '%s' doesn't exist.")\n" "$current_dir" >&2
         return 1
     fi
 
@@ -406,8 +349,8 @@ run_menu() {
             [[ -d "$dir" ]] || continue
             local base
             base=$(basename "$dir")
-            menu_entries+=("$base" "$UI_FOLDER_PREFIX$base" "submenu:$dir")
-            display_entries+=("$base" "$UI_FOLDER_PREFIX$base")
+            menu_entries+=("$base" "$(_ "Folder: ")$base" "submenu:$dir")
+            display_entries+=("$base" "$(_ "Folder: ")$base")
         done
 
         # Every .txt file as own submenu
@@ -415,24 +358,24 @@ run_menu() {
             [[ -e "$file" ]] || continue
             local base
             base=$(basename "$file" .txt)
-            menu_entries+=("$base" "$UI_PROGRAMS_PREFIX$base" "textmenu:$file")
-            display_entries+=("$base" "$UI_PROGRAMS_PREFIX$base")
+            menu_entries+=("$base" "$(_ "Programs from ")$base" "textmenu:$file")
+            display_entries+=("$base" "$(_ "Programs from ")$base")
         done
 
         clear
         if [[ ${#display_entries[@]} -eq 0 ]]; then
-            dialog --msgbox "$(printf "$UI_ERROR_NO_ENTRIES_DIR" "$current_dir")" 10 70
+            dialog --msgbox "$(printf "$(_ "No entries in directory:\\n%s")" "$current_dir")" 10 70
             clear
             return 0
         fi
 
         local choice
         choice=$(dialog --begin 3 1 \
-            --title "$UI_FOLDER_TITLE" \
-            --ok-label "$UI_SELECT_BUTTON" \
-            --cancel-label "$UI_EXIT_BUTTON" \
-            --menu "$UI_MENU_PROMPT" 0 0 0 \
-            "$UI_BACK_OPTION" "$UI_BACK_DESCRIPTION" \
+            --title "$(_ "Folder list")" \
+            --ok-label "$(_ "Select")" \
+            --cancel-label "$(_ "Exit")" \
+            --menu "$(_ "Please select an item and press enter to confirm, escape to exit ATMIRAL:")" 0 0 0 \
+            "$(_ "...")" "$(_ "Parent level")" \
             "${display_entries[@]}" \
             3>&1 1>&2 2>&3)
 
@@ -443,7 +386,7 @@ run_menu() {
         fi
 
         # Back to parent menu
-        if [[ "$choice" == "$UI_BACK_OPTION" ]]; then
+        if [[ "$choice" == "$(_ "...")" ]]; then
             return 0
         fi
 
@@ -467,13 +410,17 @@ run_menu() {
 main() {
     
     if ! run_menu "$MENUDIR"; then
-        printf "%s\n" "$MSG_ERROR_MAIN_MENU_FAILED" >&2
+        printf "%s\n" "$(_ "Error while executing main menu.")" >&2
         exit 1
     fi
 }
 
 # Trap to handle cleanup on script exit
-trap 'clear; printf "%s\n" "$MSG_EXIT"' EXIT
+cleanup() {
+    clear
+    printf '%s\n' "$(_ "Exited ATMIRAL.")"
+}
+trap cleanup EXIT
 
 # Start the application
 main "$@"

@@ -9,7 +9,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default configuration values
-ATMIRAL_LANG="de"
+ATMIRAL_LANG=""
 COMMAND_DEBUG=0
 SHOW_HIDDEN=1
 DEFAULT_EDITOR="nano"
@@ -44,80 +44,32 @@ if [ -n "$CONFIG_FILE" ]; then
     fi
 fi
 
-# Load language file
-load_language_file() {
-    local lang_file="$1"
-    
-    if [[ ! -f "$lang_file" ]]; then
-        return 1
-    fi
-    
-    if [[ ! -r "$lang_file" ]]; then
-        echo "Error: Cannot read language file '$lang_file'." >&2
-        return 1
-    fi
-    
-    # Load the language file safely
-    if ! bash -n "$lang_file" 2>/dev/null; then
-        echo "Error: Invalid syntax in language file '$lang_file'." >&2
-        return 1
-    fi
-
-    source "$lang_file"
-
-    # Validate critical variables are set
-    local required_vars=(
-        "MSG_ERROR_DIALOG_MISSING"
-        "UI_FM_TITLE"
-        "UI_FM_MENU_PROMPT"
-        "UI_OK_BUTTON"
-        "UI_CANCEL_BUTTON"
-        "UI_BACK_DESCRIPTION"
-    )
-    
-    local missing_vars=()
-    for var in "${required_vars[@]}"; do
-        if [[ ! -v $var ]]; then
-            missing_vars+=("$var")
-        fi
-    done
-    
-    if [[ ${#missing_vars[@]} -gt 0 ]]; then
-        echo "Error: Language file '$lang_file' is missing required variables:" >&2
-        printf "  %s\n" "${missing_vars[@]}" >&2
-        return 1
-    fi
-    
-    return 0
-}
-
-if [[ -d "/usr/local/share/atmiral/lang/" ]]; then
-    LANGDIR="/usr/local/share/atmiral/lang/"
-elif [[ -d "$HOME/.local/share/atmiral/lang/" ]]; then
-    LANGDIR="$HOME/.local/share/atmiral/lang/"
-else
-    LANGDIR="$SCRIPT_DIR/lang/"
+# Initialize GNU gettext after loading configuration.
+# shellcheck source=lib/i18n.sh
+I18N_LIB="$SCRIPT_DIR/lib/i18n.sh"
+if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="$HOME/.local/share/atmiral/lib/i18n.sh"; fi
+if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="/usr/local/share/atmiral/lib/i18n.sh"; fi
+if [[ ! -r "$I18N_LIB" ]]; then
+    echo "Error: Cannot load the ATMIRAL gettext runtime." >&2
+    exit 1
 fi
-
-LANG_FILE="${LANGDIR}/${ATMIRAL_LANG}.sh"
-if ! load_language_file "$LANG_FILE"; then
-    # Fallback to english
-    LANG_FILE="${LANGDIR}/en.sh"
-    if ! load_language_file "$LANG_FILE"; then
-        echo "Error: No valid language file found." >&2
-        exit 1
-    fi
+# shellcheck source=lib/i18n.sh
+source "$I18N_LIB"
+if ! command -v gettext >/dev/null 2>&1; then
+    echo "Error: GNU gettext is required." >&2
+    exit 1
 fi
+atmiral_init_i18n "$SCRIPT_DIR" "$ATMIRAL_LANG"
 
 # Dependency Check
 check_dependencies() {
     if ! command -v dialog >/dev/null 2>&1; then
-        printf "%s\n" "$MSG_ERROR_DIALOG_MISSING" >&2
-        printf "%s\n" "$MSG_ERROR_DIALOG_INSTALL" >&2
+        printf "%s\n" "$(_ "Error: dialog is not installed.")" >&2
+        printf "%s\n" "$(_ "Install using e.g.: sudo apt install dialog")" >&2
         exit 1
     fi
     if ! command -v file >/dev/null 2>&1; then
-        printf "%s\n" "$MSG_ERROR_FILE_MISSING" >&2
+        printf "%s\n" "$(_ "Error: The file command is missing.")" >&2
         exit 1
     fi
 }
@@ -126,10 +78,10 @@ check_dependencies
 
 # Set initial options for dialog
 export DIALOGOPTS="--visit-items --no-lines \
-    --ok-label \"$UI_OK_BUTTON\" \
-    --yes-label \"$UI_YES_BUTTON\" \
-    --no-label \"$UI_NO_BUTTON\" \
-    --cancel-label \"$UI_CANCEL_BUTTON\""
+    --ok-label \"$(_ "OK")\" \
+    --yes-label \"$(_ "Yes")\" \
+    --no-label \"$(_ "No")\" \
+    --cancel-label \"$(_ "Cancel")\""
 
 # Set starting directory and fallback
 if [[ -n "${1:-}" && -d "$1" ]]; then
@@ -149,28 +101,28 @@ exit_code_to_message() {
     fi
 
     if ! [[ "$exit_code" =~ ^[0-9]+$ ]]; then
-        printf "$EXIT_MSG_INVALID" "$exit_code" >&2
+        printf "$(_ "Invalid exit code '%s'. It must be a positive integer.")" "$exit_code" >&2
         return 1
     fi
 
     case $exit_code in
         0)
-            echo "$EXIT_MSG_0"
+            echo "$(_ "Command successful.")"
             ;;
         1)
-            echo "$EXIT_MSG_1"
+            echo "$(_ "Error executing command: General error.")"
             ;;
         2)
-            echo "$EXIT_MSG_2"
+            echo "$(_ "Error: Wrong usage of arguments.")"
             ;;
         126)
-            echo "$EXIT_MSG_126"
+            echo "$(_ "Error: Insufficient permissions.")"
             ;;
         127)
-            echo "$EXIT_MSG_127"
+            echo "$(_ "Error: Command not found.")"
             ;;
         *)
-            printf "$EXIT_MSG_UNKNOWN" "$exit_code"
+            printf "$(_ "Error: Exit code '%d'")" "$exit_code"
             ;;
     esac
 }
@@ -182,7 +134,7 @@ get_safe_mimetype() {
     
     # Check if path exists
     if [[ ! -e "$filepath" && ! -L "$filepath" ]]; then
-        echo "$UI_FILE_NOT_FOUND"
+        echo "$(_ "File not found")"
         return 1
     fi
     
@@ -191,7 +143,7 @@ get_safe_mimetype() {
         local link_target
         link_target=$(readlink "$filepath" 2>/dev/null)
         if [[ $? -ne 0 || -z "$link_target" ]]; then
-            echo "$UI_SYMLINK_BROKEN"
+            echo "$(_ "Broken link %s")"
             return 1
         fi
         
@@ -204,44 +156,44 @@ get_safe_mimetype() {
         
         # Check link target
         if [[ ! -e "$link_target" ]]; then
-            echo "$UI_SYMLINK_BROKEN"
+            echo "$(_ "Broken link %s")"
             return 1
         elif [[ -d "$link_target" ]]; then
-            echo "$UI_SYMLINK_TO_DIRECTORY"
+            echo "$(_ "Directory link")"
             return 0
         elif [[ -f "$link_target" ]]; then
-            echo "$UI_SYMLINK_TO_FILE"
+            echo "$(_ "File link")"
             return 0
         else
-            echo "$UI_SYMLINK_TO_SPECIAL"
+            echo "$(_ "special file")"
             return 0
         fi
     fi
     
     # Handle special file types
     if [[ -d "$filepath" ]]; then
-        echo "$UI_FM_FOLDER"
+        echo "$(_ "Folder")"
         return 0
     elif [[ -c "$filepath" ]]; then
-        echo "$UI_SPECIAL_CHAR_DEVICE"
+        echo "$(_ "Character device")"
         return 0
     elif [[ -b "$filepath" ]]; then
-        echo "$UI_SPECIAL_BLOCK_DEVICE"
+        echo "$(_ "Block device")"
         return 0
     elif [[ -p "$filepath" ]]; then
-        echo "$UI_SPECIAL_NAMED_PIPE"
+        echo "$(_ "Named Pipe")"
         return 0
     elif [[ -S "$filepath" ]]; then
-        echo "$UI_SPECIAL_SOCKET"
+        echo "$(_ "Socket")"
         return 0
     elif [[ ! -f "$filepath" ]]; then
-        echo "$UI_SPECIAL_UNKNOWN"
+        echo "$(_ "special file")"
         return 1
     fi
     
     # Check read permissions for regular files
     if [[ ! -r "$filepath" ]]; then
-        echo "$UI_FILE_NO_PERMISSION"
+        echo "$(_ "No read permission")"
         return 1
     fi
     
@@ -263,7 +215,7 @@ get_safe_mimetype() {
             fi
         elif [[ $exit_code -eq 124 ]]; then
             # Timeout exceded
-            echo "$UI_FILE_TIMEOUT"
+            echo "$(_ "Timeout while getting file type")"
             return 1
         fi
     fi
@@ -351,7 +303,7 @@ show_actions() {
     
     # Check if entry exists
     if [[ ! -e "$current_entry" ]]; then
-        run_dialog --msgbox "$(printf "$UI_FILE_NOT_FOUND" "$current_entry")" 10 70
+        run_dialog --msgbox "$(printf "$(_ "File not found")" "$current_entry")" 10 70
         return
     fi
     
@@ -359,57 +311,57 @@ show_actions() {
     
     if [[ -d "$current_entry" ]]; then
         # Directory actions
-        actions+=("open" "$ACTION_OPEN_DIR")
-        actions+=("copy" "$ACTION_COPY")
-        actions+=("move" "$ACTION_MOVE")
-        actions+=("delete" "$ACTION_DELETE")
-        actions+=("info" "$ACTION_INFO")
+        actions+=("open" "$(_ "Open directory")")
+        actions+=("copy" "$(_ "Copy to")")
+        actions+=("move" "$(_ "Move to")")
+        actions+=("delete" "$(_ "Delete")")
+        actions+=("info" "$(_ "File info")")
     else
         # File actions - existing logic
         local mimetype=$(file --mime-type -b "$current_entry" 2>/dev/null || echo "application/octet-stream")
 
         if [[ $mimetype == text/* ]]; then
             if command -v "$DEFAULT_EDITOR" >/dev/null 2>&1; then
-                actions+=("editor" "$(printf "$ACTION_AS_TEXT" "$DEFAULT_EDITOR")")
+                actions+=("editor" "$(printf "$(_ "Open with %s as text")" "$DEFAULT_EDITOR")")
             fi
             if command -v "$DEFAULT_VIEWER" >/dev/null 2>&1; then
-                actions+=("viewer" "$(printf "$ACTION_VIEW" "$DEFAULT_VIEWER")")
+                actions+=("viewer" "$(printf "$(_ "View with %s")" "$DEFAULT_VIEWER")")
             fi
         fi
         if [[ $mimetype == audio/* || $mimetype == video/* ]]; then
             if command -v "$DEFAULT_PLAYER" >/dev/null 2>&1; then
-                actions+=("player" "$(printf "$ACTION_PLAY_MEDIA" "$DEFAULT_PLAYER")")
+                actions+=("player" "$(printf "$(_ "Play with %s")" "$DEFAULT_PLAYER")")
             fi
         fi
         if [[ $mimetype == image/* ]]; then
             if command -v "$DEFAULT_IMG_VIEWER" >/dev/null 2>&1; then
-                actions+=("imageviewer" "$(printf "$ACTION_IMAGE" "$DEFAULT_IMG_VIEWER")")
+                actions+=("imageviewer" "$(printf "$(_ "View with %s")" "$DEFAULT_IMG_VIEWER")")
             fi
         fi
         if [[ -x "$current_entry" ]]; then
-            actions+=("run" "$ACTION_RUN")
+            actions+=("run" "$(_ "Run")")
         fi
-        actions+=("custom" "$ACTION_CUSTOM")
-        actions+=("copy" "$ACTION_COPY")
-        actions+=("move" "$ACTION_MOVE")
-        actions+=("delete" "$ACTION_DELETE")
-        actions+=("info" "$ACTION_INFO")
+        actions+=("custom" "$(_ "Open with")")
+        actions+=("copy" "$(_ "Copy to")")
+        actions+=("move" "$(_ "Move to")")
+        actions+=("delete" "$(_ "Delete")")
+        actions+=("info" "$(_ "File info")")
     fi
     
-    actions+=("cancel" "$ACTION_CANCEL")
+    actions+=("cancel" "$(_ "Cancel")")
 
     # File/Directory actions menu
     clear
     local item_type
     if [[ -d "$current_entry" ]]; then
-        item_type="$UI_FM_FOLDER"
+        item_type="$(_ "Folder")"
     else
-        item_type="$UI_FM_FILE"
+        item_type="$(_ "File")"
     fi
 
-    if ! action=$(run_dialog --title "$(printf "$ACTION_TITLE" "$item_type" "$(basename "$current_entry")")" \
+    if ! action=$(run_dialog --title "$(printf "$(_ "%s: %s")" "$item_type" "$(basename "$current_entry")")" \
         --no-tags \
-        --menu "$UI_FM_ACTION_PROMPT" 0 0 0 \
+        --menu "$(_ "Please select an action and press enter to confirm:")" 0 0 0 \
         "${actions[@]}"); then
             return
         fi
@@ -427,8 +379,8 @@ show_actions() {
         "run") ("$current_entry") ;;
         "custom")
             clear
-            if ! custom_cmd=$(run_dialog --title "$ACTION_CUSTOM" \
-                --inputbox "$UI_FM_CUSTOM_PROMPT" 10 60); then
+            if ! custom_cmd=$(run_dialog --title "$(_ "Open with")" \
+                --inputbox "$(_ "Please enter command (parameters allowed):")" 10 60); then
                 return
             fi
 
@@ -452,12 +404,12 @@ show_actions() {
                 fi
             else
                 clear
-                run_dialog --msgbox "$UI_FM_CUSTOM_ERROR" 10 70
+                run_dialog --msgbox "$(_ "Error: Input cannot be empty.")" 10 70
             fi
             ;;
         "copy")
             clear
-            if ! copy_cmd=$(run_dialog --title "$ACTION_COPY" --fselect "$HOME/" 15 70); then
+            if ! copy_cmd=$(run_dialog --title "$(_ "Copy to")" --fselect "$HOME/" 15 70); then
                 return
             fi
 
@@ -473,7 +425,7 @@ show_actions() {
             ;;
         "move")
             clear
-            if ! move_cmd=$(run_dialog --title "$ACTION_MOVE" --fselect "$HOME/" 15 70); then
+            if ! move_cmd=$(run_dialog --title "$(_ "Move to")" --fselect "$HOME/" 15 70); then
                 return
             fi
             
@@ -487,12 +439,12 @@ show_actions() {
             clear
             local item_type
             if [[ -d "$current_entry" ]]; then
-                item_type="$UI_FM_FOLDER"
+                item_type="$(_ "Folder")"
             else
-                item_type="$UI_FM_FILE"
+                item_type="$(_ "File")"
             fi
             
-            if run_dialog --title "$ACTION_DELETE" --yesno "$(printf "$ACTION_DELETE_CONFIRM" "$item_type" "$(basename "$current_entry")")" 15 70; then
+            if run_dialog --title "$(_ "Delete")" --yesno "$(printf "$(_ "Should %s '%s' be deleted?")" "$item_type" "$(basename "$current_entry")")" 15 70; then
                 if [[ -d "$current_entry" ]]; then
                     (rm -rf "$current_entry")
                 else
@@ -510,13 +462,13 @@ show_actions() {
             local detailed_info
             detailed_info=$(get_safe_mimetype "$current_entry")
             
-            info_message=$(printf "$INFO_MSG_PATH" "$current_entry\n")
+            info_message=$(printf "$(_ "Path: %s")" "$current_entry\n")
             info_message+="---------------------------------\n"
-            info_message+=$(printf "$INFO_MSG_TYPE" "$detailed_info\n")
-            info_message+=$(printf "$INFO_MSG_SIZE" "$(du -sh "$current_entry" 2>/dev/null | awk '{print $1}')\n")
-            info_message+=$(printf "$INFO_MSG_PERMS" "$(stat -c '%A (%U:%G)' "$current_entry" 2>/dev/null)\n")
+            info_message+=$(printf "$(_ "Type: %s")" "$detailed_info\n")
+            info_message+=$(printf "$(_ "File size: %s")" "$(du -sh "$current_entry" 2>/dev/null | awk '{print $1}')\n")
+            info_message+=$(printf "$(_ "Permissions: %s")" "$(stat -c '%A (%U:%G)' "$current_entry" 2>/dev/null)\n")
 
-            run_dialog --title "$ACTION_INFO" --msgbox "$info_message" 0 0
+            run_dialog --title "$(_ "File info")" --msgbox "$info_message" 0 0
             ;;
         *)
             return
@@ -524,10 +476,17 @@ show_actions() {
     esac
 }
 
+# Trap to handle cleanup on script exit
+cleanup() {
+    clear
+    printf '%s\n' "$(_ "Exited ATMIRAL.")"
+}
+trap cleanup EXIT
+
 while true; do
     # List entries
     entries=()
-    entries+=(".." "$UI_BACK_DESCRIPTION")
+    entries+=(".." "$(_ "Parent level")")
 
     # Command for finding directories (excluding . and ..)
     find_dirs=(find "$CWD" -maxdepth 1 -mindepth 1 -type d)
@@ -547,9 +506,9 @@ while true; do
         # local name
         name=$(basename "$dir_path")
         if [[ -L "$dir_path" ]]; then
-            entries+=("$name" "$UI_SYMLINK_GENERIC")
+            entries+=("$name" "$(_ "symbolic link")")
         else
-            entries+=("$name" "$UI_FM_FOLDER")
+            entries+=("$name" "$(_ "Folder")")
         fi
     done < <("${find_dirs[@]}" -print0 | sort -z)
 
@@ -559,24 +518,24 @@ while true; do
         # local name
         name=$(basename "$file_path")
         if [[ -L "$file_path" ]]; then
-            entries+=("$name" "$UI_SYMLINK_GENERIC")
+            entries+=("$name" "$(_ "symbolic link")")
         elif [[ -c "$file_path" || -b "$file_path" || -p "$file_path" || -S "$file_path" ]]; then
-            entries+=("$name" "$UI_SPECIAL_GENERIC")
+            entries+=("$name" "$(_ "special file")")
         else
-            entries+=("$name" "$UI_FM_FILE")
+            entries+=("$name" "$(_ "File")")
         fi
     done < <("${find_files[@]}" -print0 | sort -z)
 
     # Main menu
     clear
     choice=$(run_dialog --begin 3 1 \
-        --backtitle "$UI_FM_TITLE - ${USER}@${HOSTNAME}:${CWD}" \
-        --extra-button --extra-label "$UI_ACTIONS_BUTTON" \
-        --title "$UI_FM_LIST_TITLE" \
-        --ok-label "$UI_SELECT_BUTTON" \
-        --cancel-label "$UI_EXIT_BUTTON" \
+        --backtitle "$(_ "ATMIRAL file browser") - ${USER}@${HOSTNAME}:${CWD}" \
+        --extra-button --extra-label "$(_ "Actions")" \
+        --title "$(_ "Folder content")" \
+        --ok-label "$(_ "Select")" \
+        --cancel-label "$(_ "Exit")" \
         --default-item "$current_selection" \
-        --menu "$UI_FM_MENU_PROMPT" 0 0 0 \
+        --menu "$(_ "Select an item with your arrow keys and use enter to confirm:")" 0 0 0 \
         "${entries[@]}")
 
     dialog_exit=$?
@@ -591,7 +550,7 @@ while true; do
             if [ -d "$CWD/$choice" ]; then
                 # Check read permissions
                 if [[ ! -r "$CWD/$choice" ]]; then
-                    run_dialog --msgbox "$UI_FILE_NO_PERMISSION" 10 70
+                    run_dialog --msgbox "$(_ "No read permission")" 10 70
                    continue
                 fi
 
@@ -609,7 +568,7 @@ while true; do
                 current_selection="$choice"
                 show_actions "$CWD/$choice"
             else
-                run_dialog --msgbox "$UI_FM_NO_SELECTION" 10 70
+                run_dialog --msgbox "$(_ "No selection")" 10 70
             fi
             ;;
         1|255)
@@ -620,6 +579,3 @@ while true; do
             ;;
     esac
 done
-
-# Trap to handle cleanup on script exit
-trap 'clear; printf "%s\n" "$MSG_EXIT"' EXIT
