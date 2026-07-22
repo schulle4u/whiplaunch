@@ -28,7 +28,9 @@ if [ -n "$CONFIG_FILE" ]; then
             echo "Error: Config file '$CONFIG_FILE' contains invalid lines." >&2
             exit 1
         fi
-        if ! (set -e; source "$CONFIG_FILE") 2>/dev/null; then
+        # The path is selected from the supported configuration locations above.
+        # shellcheck disable=SC1090
+        if ! source "$CONFIG_FILE" 2>/dev/null; then
             echo "Error: Invalid config file '$CONFIG_FILE'." >&2
             exit 1
         fi
@@ -67,10 +69,15 @@ check_dependencies() {
 check_dependencies
 
 # Set initial options for dialog
-export DIALOGOPTS="--visit-items --no-lines \
+# dialog parses the quoted DIALOGOPTS string itself.
+# shellcheck disable=SC2089
+DIALOGOPTS="--visit-items \
+    --no-lines \
     --backtitle \"$(_ "ATMIRAL") - ${USER}@${HOSTNAME}\" \
     --ok-label \"$(_ "OK")\" \
     --cancel-label \"$(_ "Cancel")\""
+# shellcheck disable=SC2090
+export DIALOGOPTS
 
 # Looking for menu list files
 if [[ -n "${1:-}" && -d "$1" ]]; then
@@ -85,77 +92,77 @@ fi
 
 # Validate if directory exists
 if [[ ! -d "$MENUDIR" ]]; then
-    printf "$(_ "Error: Menu directory '%s' doesn't exist.")\n" "$MENUDIR" >&2
+    atmiral_printf "$(_ "Error: Menu directory '%s' doesn't exist.")\n" "$MENUDIR" >&2
     exit 1
 fi
 
 # Parse text format menu files
 parse_menufile() {
     local menufile="$1"
-    
+
     if [[ ! -f "$menufile" ]]; then
-        printf "$(_ "Warning: File '%s' not found.")\n" "$menufile" >&2
+        atmiral_printf "$(_ "Warning: File '%s' not found.")\n" "$menufile" >&2
         return 1
     fi
-    
+
     if [[ ! -r "$menufile" ]]; then
-        printf "$(_ "Warning: File '%s' not readable.")\n" "$menufile" >&2
+        atmiral_printf "$(_ "Warning: File '%s' not readable.")\n" "$menufile" >&2
         return 1
     fi
-    
+
     PARSED=()
     local line_number=0
     local current_name=""
     local current_desc=""
     local current_cmd=""
     local current_args=""
-    
+
     while IFS= read -r line || [[ -n "$line" ]]; do
         line_number=$((line_number + 1))
-        
+
         # Remove leading and trailing whitespace
         line=$(echo "$line" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
-        
+
         # Skip comments and empty lines
         [[ "$line" =~ ^#.*$ ]] && continue
         [[ -z "$line" ]] && continue
-        
+
         # Parse key-value pairs using localized patterns
-        if [[ "$line" =~ ^[Nn]ame:[[:space:]]* ]]; then
+        if [[ "$line" =~ ^[Nn]ame:[[:space:]]*(.*)$ ]]; then
             # Save previous entry if complete
             if [[ -n "$current_name" && -n "$current_cmd" ]]; then
                 PARSED+=("$current_name" "$current_desc" "$current_cmd" "$current_args")
             fi
             # Start new entry
-            current_name=$(echo "$line" | sed "s/^[Nn]ame:[[:space:]]*//")
+            current_name="${BASH_REMATCH[1]}"
             current_desc=""
             current_cmd=""
             current_args=""
-            
-        elif [[ "$line" =~ ^[Dd]escription:[[:space:]]* ]]; then
-            current_desc=$(echo "$line" | sed "s/^[Dd]escription:[[:space:]]*//")
-            
-        elif [[ "$line" =~ ^[Cc]ommand:[[:space:]]* ]]; then
-            current_cmd=$(echo "$line" | sed "s/^[Cc]ommand:[[:space:]]*//")
-            
-        elif [[ "$line" =~ ^[Aa]rguments:[[:space:]]* ]]; then
-            current_args=$(echo "$line" | sed "s/^[Aa]rguments:[[:space:]]*//")
-            
+
+        elif [[ "$line" =~ ^[Dd]escription:[[:space:]]*(.*)$ ]]; then
+            current_desc="${BASH_REMATCH[1]}"
+
+        elif [[ "$line" =~ ^[Cc]ommand:[[:space:]]*(.*)$ ]]; then
+            current_cmd="${BASH_REMATCH[1]}"
+
+        elif [[ "$line" =~ ^[Aa]rguments:[[:space:]]*(.*)$ ]]; then
+            current_args="${BASH_REMATCH[1]}"
+
         else
-            printf "$(_ "Warning: Unknown format on line %d: '%s'")\n" "$line_number" "$line" >&2
+            atmiral_printf "$(_ "Warning: Unknown format on line %d: '%s'")\n" "$line_number" "$line" >&2
         fi
     done < "$menufile"
-    
+
     # Don't forget the last entry
     if [[ -n "$current_name" && -n "$current_cmd" ]]; then
         PARSED+=("$current_name" "$current_desc" "$current_cmd" "$current_args")
     fi
-    
+
     if [[ ${#PARSED[@]} -eq 0 ]]; then
-        printf "$(_ "Warning: No valid entries found in '%s'.")\n" "$menufile" >&2
+        atmiral_printf "$(_ "Warning: No valid entries found in '%s'.")\n" "$menufile" >&2
         return 1
     fi
-    
+
     return 0
 }
 
@@ -164,20 +171,20 @@ execute_command() {
     local cmd="$1"
     local args="$2"
     local full_command
-    
+
     if [[ -n "$args" ]]; then
         # Check if arguments contain placeholders or if we should prompt
         if [[ "$args" == *"<"*">"* ]]; then
             # Interactive argument input
             local processed_args="$args"
             local placeholder
-            
+
             # Find all placeholders like <filename>, <path>, etc.
             while [[ "$processed_args" =~ \<([^>]+)\> ]]; do
                 placeholder="${BASH_REMATCH[1]}"
                 local user_input
                 local dialog_type="inputbox"  # default
-                
+
                 # Determine dialog type based on placeholder content
                 if [[ "$placeholder" =~ ^[Ff]ile ]]; then
                     dialog_type="fselect"
@@ -186,7 +193,7 @@ execute_command() {
                 elif [[ "$placeholder" =~ ^[Pp]assword ]]; then
                     dialog_type="passwordbox"
                 fi
-                
+
                 # Show appropriate dialog based on type
                 case "$dialog_type" in
                     "fselect")
@@ -214,7 +221,7 @@ execute_command() {
                         fi
                         ;;
                     "passwordbox")
-                        if user_input=$(dialog --insecure --passwordbox "$(printf "$(_ "Please enter '%s':")" "$placeholder")" 10 60 3>&1 1>&2 2>&3); then
+                        if user_input=$(dialog --insecure --passwordbox "$(atmiral_printf "$(_ "Please enter '%s':")" "$placeholder")" 10 60 3>&1 1>&2 2>&3); then
                             # Password input successful
                             :
                         else
@@ -227,7 +234,7 @@ execute_command() {
                         ;;
                     *)
                         # Default inputbox for unrecognized placeholders
-                        if user_input=$(dialog --inputbox "$(printf "$(_ "Please enter '%s':")" "$placeholder")" 10 60 3>&1 1>&2 2>&3); then
+                        if user_input=$(dialog --inputbox "$(atmiral_printf "$(_ "Please enter '%s':")" "$placeholder")" 10 60 3>&1 1>&2 2>&3); then
                             # Input successful
                             :
                         else
@@ -239,7 +246,7 @@ execute_command() {
                         fi
                         ;;
                 esac
-                
+
                 # Replace placeholder with user input
                 processed_args="${processed_args//<$placeholder>/$user_input}"
             done
@@ -251,13 +258,13 @@ execute_command() {
     else
         full_command="$cmd"
     fi
-    
+
     clear
     if [[ "$COMMAND_DEBUG" == "1" ]]; then
-        printf "$(_ "Running: %s")\n" "$full_command"
+        atmiral_printf "$(_ "Running: %s")\n" "$full_command"
         printf '%s\n' '----------------------------------------'
     fi
-    
+
     # Use bash -c instead of eval for better safety
     if bash -c "$full_command"; then
         printf '%s\n' '----------------------------------------'
@@ -265,9 +272,9 @@ execute_command() {
     else
         local exit_code=$?
         printf '%s\n' '----------------------------------------'
-        printf "$(_ "Error while executing command (Exit Code: %d).")\n" "$exit_code"
+        atmiral_printf "$(_ "Error while executing command (Exit Code: %d).")\n" "$exit_code"
     fi
-    
+
     printf "\n"
     printf "%s" "$(_ "Press enter to return...")"
     read -r
@@ -276,15 +283,15 @@ execute_command() {
 # Show menu for a .txt file
 run_textmenu() {
     local menufile="$1"
-    
+
     if ! parse_menufile "$menufile"; then
-        dialog --msgbox "$(printf "$(_ "Error loading file:\\n%s")" "$menufile")" 10 70
+        dialog --msgbox "$(atmiral_printf "$(_ "Error loading file:\\n%s")" "$menufile")" 10 70
         clear
         return 1
     fi
-    
+
     if [[ ${#PARSED[@]} -eq 0 ]]; then
-        dialog --msgbox "$(printf "$(_ "No valid entries in:\\n%s")" "$menufile")" 10 70
+        dialog --msgbox "$(atmiral_printf "$(_ "No valid entries in:\\n%s")" "$menufile")" 10 70
         clear
         return 1
     fi
@@ -334,9 +341,9 @@ run_textmenu() {
 # Folder menu
 run_menu() {
     local current_dir="$1"
-    
+
     if [[ ! -d "$current_dir" ]]; then
-        printf "$(_ "Error: Menu directory '%s' doesn't exist.")\n" "$current_dir" >&2
+        atmiral_printf "$(_ "Error: Menu directory '%s' doesn't exist.")\n" "$current_dir" >&2
         return 1
     fi
 
@@ -364,7 +371,7 @@ run_menu() {
 
         clear
         if [[ ${#display_entries[@]} -eq 0 ]]; then
-            dialog --msgbox "$(printf "$(_ "No entries in directory:\\n%s")" "$current_dir")" 10 70
+            dialog --msgbox "$(atmiral_printf "$(_ "No entries in directory:\\n%s")" "$current_dir")" 10 70
             clear
             return 0
         fi
@@ -408,7 +415,7 @@ run_menu() {
 
 # Main execution
 main() {
-    
+
     if ! run_menu "$MENUDIR"; then
         printf "%s\n" "$(_ "Error while executing main menu.")" >&2
         exit 1

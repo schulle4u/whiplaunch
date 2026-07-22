@@ -33,7 +33,9 @@ if [ -n "$CONFIG_FILE" ]; then
             echo "Error: Config file '$CONFIG_FILE' contains invalid lines." >&2
             exit 1
         fi
-        if ! (set -e; source "$CONFIG_FILE") 2>/dev/null; then
+        # The path is selected from the supported configuration locations above.
+        # shellcheck disable=SC1090
+        if ! source "$CONFIG_FILE" 2>/dev/null; then
             echo "Error: Invalid config file '$CONFIG_FILE'." >&2
             exit 1
         fi
@@ -76,11 +78,16 @@ check_dependencies() {
 check_dependencies
 
 # Set initial options for dialog
-export DIALOGOPTS="--visit-items --no-lines \
+# dialog parses the quoted DIALOGOPTS string itself.
+# shellcheck disable=SC2089
+DIALOGOPTS="--visit-items \
+    --no-lines \
     --ok-label \"$(_ "OK")\" \
     --yes-label \"$(_ "Yes")\" \
     --no-label \"$(_ "No")\" \
     --cancel-label \"$(_ "Cancel")\""
+# shellcheck disable=SC2090
+export DIALOGOPTS
 
 # Set starting directory and fallback
 if [[ -n "${1:-}" && -d "$1" ]]; then
@@ -93,35 +100,31 @@ fi
 
 # Translate some expected exit codes into human-readable messages
 exit_code_to_message() {
-    if [[ -z "$1" ]]; then
-        local exit_code=$?
-    else
-        local exit_code=$1
-    fi
+    local exit_code="$1"
 
     if ! [[ "$exit_code" =~ ^[0-9]+$ ]]; then
-        printf "$(_ "Invalid exit code '%s'. It must be a positive integer.")" "$exit_code" >&2
+        atmiral_printf "$(_ "Invalid exit code '%s'. It must be a positive integer.")" "$exit_code" >&2
         return 1
     fi
 
     case $exit_code in
         0)
-            echo "$(_ "Command successful.")"
+            _ "Command successful."
             ;;
         1)
-            echo "$(_ "Error executing command: General error.")"
+            _ "Error executing command: General error."
             ;;
         2)
-            echo "$(_ "Error: Wrong usage of arguments.")"
+            _ "Error: Wrong usage of arguments."
             ;;
         126)
-            echo "$(_ "Error: Insufficient permissions.")"
+            _ "Error: Insufficient permissions."
             ;;
         127)
-            echo "$(_ "Error: Command not found.")"
+            _ "Error: Command not found."
             ;;
         *)
-            printf "$(_ "Error: Exit code '%d'")" "$exit_code"
+            atmiral_printf "$(_ "Error: Exit code '%d'")" "$exit_code"
             ;;
     esac
 }
@@ -130,83 +133,84 @@ exit_code_to_message() {
 get_safe_mimetype() {
     local filepath="$1"
     local mimetype=""
-    
+
     # Check if path exists
     if [[ ! -e "$filepath" && ! -L "$filepath" ]]; then
-        echo "$(_ "File not found")"
+        _ "File not found"
         return 1
     fi
-    
+
     # Handle symbolic links
     if [[ -L "$filepath" ]]; then
         local link_target
         link_target=$(readlink "$filepath" 2>/dev/null)
         if [[ $? -ne 0 || -z "$link_target" ]]; then
-            echo "$(_ "Broken link %s")"
+            atmiral_printf "$(_ "Broken link %s")\\n" "$filepath"
             return 1
         fi
-        
+
         # Check if link is absolute or relative
         if [[ "$link_target" != /* ]]; then
             # Relative link - combine with original directory
-            local dir=$(dirname "$filepath")
+            local dir
+            dir=$(dirname "$filepath")
             link_target="$dir/$link_target"
         fi
-        
+
         # Check link target
         if [[ ! -e "$link_target" ]]; then
-            echo "$(_ "Broken link %s")"
+            atmiral_printf "$(_ "Broken link %s")\\n" "$filepath"
             return 1
         elif [[ -d "$link_target" ]]; then
-            echo "$(_ "Directory link")"
+            _ "Directory link"
             return 0
         elif [[ -f "$link_target" ]]; then
-            echo "$(_ "File link")"
+            _ "File link"
             return 0
         else
-            echo "$(_ "special file")"
+            _ "special file"
             return 0
         fi
     fi
-    
+
     # Handle special file types
     if [[ -d "$filepath" ]]; then
-        echo "$(_ "Folder")"
+        _ "Folder"
         return 0
     elif [[ -c "$filepath" ]]; then
-        echo "$(_ "Character device")"
+        _ "Character device"
         return 0
     elif [[ -b "$filepath" ]]; then
-        echo "$(_ "Block device")"
+        _ "Block device"
         return 0
     elif [[ -p "$filepath" ]]; then
-        echo "$(_ "Named Pipe")"
+        _ "Named Pipe"
         return 0
     elif [[ -S "$filepath" ]]; then
-        echo "$(_ "Socket")"
+        _ "Socket"
         return 0
     elif [[ ! -f "$filepath" ]]; then
-        echo "$(_ "special file")"
+        _ "special file"
         return 1
     fi
-    
+
     # Check read permissions for regular files
     if [[ ! -r "$filepath" ]]; then
-        echo "$(_ "No read permission")"
+        _ "No read permission"
         return 1
     fi
-    
+
     # Try to get mimetype
     if command -v file >/dev/null 2>&1; then
         # Timeout and error handling
         mimetype=$(timeout 5s file --mime-type -b "$filepath" 2>/dev/null)
         local exit_code=$?
-        
+
         # Check if command successful
         if [[ $exit_code -eq 0 && -n "$mimetype" ]]; then
             # Clean unusual output
             mimetype=$(echo "$mimetype" | tr -d '\0\r\n' | cut -d';' -f1)
-            
+
             # Validate MIME-Type Format (type/subtype)
             if [[ "$mimetype" =~ ^[a-zA-Z][a-zA-Z0-9][a-zA-Z0-9\!\#\$\&\-\^]*\/[a-zA-Z0-9][a-zA-Z0-9\!\#\$\&\-\^\.]*$ ]]; then
                 echo "$mimetype"
@@ -214,11 +218,11 @@ get_safe_mimetype() {
             fi
         elif [[ $exit_code -eq 124 ]]; then
             # Timeout exceded
-            echo "$(_ "Timeout while getting file type")"
+            _ "Timeout while getting file type"
             return 1
         fi
     fi
-    
+
     # Fallback: Check file extension
     get_mimetype_by_extension "$filepath"
     return $?
@@ -227,12 +231,13 @@ get_safe_mimetype() {
 # Fallback for mimetype detection using file extension
 get_mimetype_by_extension() {
     local filepath="$1"
-    local filename=$(basename "$filepath")
+    local filename
+    filename=$(basename "$filepath")
     local extension="${filename##*.}"
-    
+
     # Convert to lowercase
     extension=$(echo "$extension" | tr '[:upper:]' '[:lower:]')
-    
+
     case "$extension" in
         # Text files
         txt|text) echo "text/plain" ;;
@@ -243,7 +248,7 @@ get_mimetype_by_extension() {
         json) echo "application/json" ;;
         xml) echo "text/xml" ;;
         csv) echo "text/csv" ;;
-        
+
         # Images
         jpg|jpeg) echo "image/jpeg" ;;
         png) echo "image/png" ;;
@@ -251,34 +256,34 @@ get_mimetype_by_extension() {
         bmp) echo "image/bmp" ;;
         svg) echo "image/svg+xml" ;;
         webp) echo "image/webp" ;;
-        
+
         # Audio
         mp3) echo "audio/mpeg" ;;
         wav) echo "audio/wav" ;;
         ogg) echo "audio/ogg" ;;
         flac) echo "audio/flac" ;;
-        
+
         # Video
         mp4) echo "video/mp4" ;;
         avi) echo "video/x-msvideo" ;;
         mkv) echo "video/x-matroska" ;;
         webm) echo "video/webm" ;;
-        
+
         # Archive
         zip) echo "application/zip" ;;
         tar) echo "application/x-tar" ;;
         gz) echo "application/gzip" ;;
         bz2) echo "application/x-bzip2" ;;
-        
+
         # Documents
         pdf) echo "application/pdf" ;;
         doc) echo "application/msword" ;;
         docx) echo "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ;;
-        
+
         # Executable
         sh|bash) echo "application/x-shellscript" ;;
         py) echo "text/x-python" ;;
-        
+
         *) echo "application/octet-stream" ;;
     esac
     return 0
@@ -299,15 +304,15 @@ run_dialog() {
 # Actions menu
 show_actions() {
     local current_entry=$1
-    
+
     # Check if entry exists
     if [[ ! -e "$current_entry" ]]; then
-        run_dialog --msgbox "$(printf "$(_ "File not found")" "$current_entry")" 10 70
+        run_dialog --msgbox "$(_ "File not found")" 10 70
         return
     fi
-    
+
     actions=()
-    
+
     if [[ -d "$current_entry" ]]; then
         # Directory actions
         actions+=("open" "$(_ "Open directory")")
@@ -317,24 +322,25 @@ show_actions() {
         actions+=("info" "$(_ "File info")")
     else
         # File actions - existing logic
-        local mimetype=$(file --mime-type -b "$current_entry" 2>/dev/null || echo "application/octet-stream")
+        local mimetype
+        mimetype=$(file --mime-type -b "$current_entry" 2>/dev/null || echo "application/octet-stream")
 
         if [[ $mimetype == text/* ]]; then
             if command -v "$DEFAULT_EDITOR" >/dev/null 2>&1; then
-                actions+=("editor" "$(printf "$(_ "Open with %s as text")" "$DEFAULT_EDITOR")")
+                actions+=("editor" "$(atmiral_printf "$(_ "Open with %s as text")" "$DEFAULT_EDITOR")")
             fi
             if command -v "$DEFAULT_VIEWER" >/dev/null 2>&1; then
-                actions+=("viewer" "$(printf "$(_ "View with %s")" "$DEFAULT_VIEWER")")
+                actions+=("viewer" "$(atmiral_printf "$(_ "View with %s")" "$DEFAULT_VIEWER")")
             fi
         fi
         if [[ $mimetype == audio/* || $mimetype == video/* ]]; then
             if command -v "$DEFAULT_PLAYER" >/dev/null 2>&1; then
-                actions+=("player" "$(printf "$(_ "Play with %s")" "$DEFAULT_PLAYER")")
+                actions+=("player" "$(atmiral_printf "$(_ "Play with %s")" "$DEFAULT_PLAYER")")
             fi
         fi
         if [[ $mimetype == image/* ]]; then
             if command -v "$DEFAULT_IMG_VIEWER" >/dev/null 2>&1; then
-                actions+=("imageviewer" "$(printf "$(_ "View with %s")" "$DEFAULT_IMG_VIEWER")")
+                actions+=("imageviewer" "$(atmiral_printf "$(_ "View with %s")" "$DEFAULT_IMG_VIEWER")")
             fi
         fi
         if [[ -x "$current_entry" ]]; then
@@ -346,7 +352,7 @@ show_actions() {
         actions+=("delete" "$(_ "Delete")")
         actions+=("info" "$(_ "File info")")
     fi
-    
+
     actions+=("cancel" "$(_ "Cancel")")
 
     # File/Directory actions menu
@@ -358,7 +364,7 @@ show_actions() {
         item_type="$(_ "File")"
     fi
 
-    if ! action=$(run_dialog --title "$(printf "$(_ "%s: %s")" "$item_type" "$(basename "$current_entry")")" \
+    if ! action=$(run_dialog --title "$(atmiral_printf "$(_ "%s: %s")" "$item_type" "$(basename "$current_entry")")" \
         --no-tags \
         --menu "$(_ "Please select an action and press enter to confirm:")" 0 0 0 \
         "${actions[@]}"); then
@@ -396,7 +402,8 @@ show_actions() {
                 # Re-build and run command
                 (bash -c "${quoted_parts[*]}")
                 local exit_code=$?
-                local exit_message=$(exit_code_to_message "$exit_code")
+                local exit_message
+                exit_message=$(exit_code_to_message "$exit_code")
                 if [[ ! $exit_code -eq 0 ]]; then
                     clear
                     run_dialog --msgbox "$exit_message" 10 70
@@ -418,7 +425,8 @@ show_actions() {
                 (cp "$current_entry" "$copy_cmd")
             fi
             local exit_code=$?
-            local exit_message=$(exit_code_to_message "$exit_code")
+            local exit_message
+            exit_message=$(exit_code_to_message "$exit_code")
             clear
             run_dialog --msgbox "$exit_message" 10 70
             ;;
@@ -427,10 +435,11 @@ show_actions() {
             if ! move_cmd=$(run_dialog --title "$(_ "Move to")" --fselect "$HOME/" 15 70); then
                 return
             fi
-            
+
             (mv "$current_entry" "$move_cmd")
             local exit_code=$?
-            local exit_message=$(exit_code_to_message "$exit_code")
+            local exit_message
+            exit_message=$(exit_code_to_message "$exit_code")
             clear
             run_dialog --msgbox "$exit_message" 10 70
             ;;
@@ -442,15 +451,16 @@ show_actions() {
             else
                 item_type="$(_ "File")"
             fi
-            
-            if run_dialog --title "$(_ "Delete")" --yesno "$(printf "$(_ "Should %s '%s' be deleted?")" "$item_type" "$(basename "$current_entry")")" 15 70; then
+
+            if run_dialog --title "$(_ "Delete")" --yesno "$(atmiral_printf "$(_ "Should %s '%s' be deleted?")" "$item_type" "$(basename "$current_entry")")" 15 70; then
                 if [[ -d "$current_entry" ]]; then
                     (rm -rf "$current_entry")
                 else
                     (rm "$current_entry")
                 fi
                 local exit_code=$?
-                local exit_message=$(exit_code_to_message "$exit_code")
+                local exit_message
+                exit_message=$(exit_code_to_message "$exit_code")
                 clear
                 run_dialog --msgbox "$exit_message" 10 70
             fi
@@ -460,12 +470,12 @@ show_actions() {
             # Using get_safe_mimetype for the detailed information
             local detailed_info
             detailed_info=$(get_safe_mimetype "$current_entry")
-            
-            info_message=$(printf "$(_ "Path: %s")" "$current_entry\n")
+
+            info_message=$(atmiral_printf "$(_ "Path: %s")" "$current_entry\n")
             info_message+="---------------------------------\n"
-            info_message+=$(printf "$(_ "Type: %s")" "$detailed_info\n")
-            info_message+=$(printf "$(_ "File size: %s")" "$(du -sh "$current_entry" 2>/dev/null | awk '{print $1}')\n")
-            info_message+=$(printf "$(_ "Permissions: %s")" "$(stat -c '%A (%U:%G)' "$current_entry" 2>/dev/null)\n")
+            info_message+=$(atmiral_printf "$(_ "Type: %s")" "$detailed_info\n")
+            info_message+=$(atmiral_printf "$(_ "File size: %s")" "$(du -sh "$current_entry" 2>/dev/null | awk '{print $1}')\n")
+            info_message+=$(atmiral_printf "$(_ "Permissions: %s")" "$(stat -c '%A (%U:%G)' "$current_entry" 2>/dev/null)\n")
 
             run_dialog --title "$(_ "File info")" --msgbox "$info_message" 0 0
             ;;
@@ -492,13 +502,13 @@ while true; do
 
     # Command for finding regular files and special files
     find_files=(find "$CWD" -maxdepth 1 -mindepth 1 -not -type d)
-    
+
     # Add hidden file exclusion
     if [[ "$SHOW_HIDDEN" != "1" ]]; then
         find_dirs+=(-not -name '.*')
         find_files+=(-not -name '.*')
     fi
-    
+
     # Process directories
     # Sort them alphabetically
     while IFS= read -r -d '' dir_path; do

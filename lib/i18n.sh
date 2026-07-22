@@ -17,3 +17,12 @@ atmiral_init_i18n() {
 }
 
 _() { gettext -- "$1"; }
+
+# Format an already translated sh-printf-format string.
+atmiral_printf() {
+    local format="$1"
+    shift
+    # Translators' format strings are validated by msgfmt.
+    # shellcheck disable=SC2059
+    printf "$format" "$@"
+}

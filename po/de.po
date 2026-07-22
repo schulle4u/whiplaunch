@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ATMIRAL 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-22 13:29+0200\n"
+"POT-Creation-Date: 2026-07-22 17:08+0200\n"
 "PO-Revision-Date: 2026-07-22 12:52+0200\n"
 "Last-Translator: Steffen Schultz\n"
 "Language-Team: German\n"
@@ -11,342 +11,319 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: atmiral.sh:61 atmiralfm.sh:67
+#: atmiral.sh:63 atmiralfm.sh:68
 msgid "Error: dialog is not installed."
 msgstr "Fehler: dialog ist nicht installiert."
 
-#: atmiral.sh:62 atmiralfm.sh:68
+#: atmiral.sh:64 atmiralfm.sh:69
 msgid "Install using e.g.: sudo apt install dialog"
 msgstr "Installiere es z. B. mit: sudo apt install dialog"
 
-#: atmiral.sh:71
+#: atmiral.sh:76
 msgid "ATMIRAL"
 msgstr "ATMIRAL"
 
-#: atmiral.sh:72 atmiralfm.sh:81
+#: atmiral.sh:77 atmiralfm.sh:85
 msgid "OK"
 msgstr "OK"
 
-#: atmiral.sh:73 atmiralfm.sh:84 atmiralfm.sh:351
+#: atmiral.sh:78 atmiralfm.sh:88 atmiralfm.sh:356
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: atmiral.sh:88 atmiral.sh:339
-#, sh-printf-format
+#: atmiral.sh:95 atmiral.sh:346
 msgid "Error: Menu directory '%s' doesn't exist."
 msgstr "Fehler: Menu-Verzeichnis '%s' existiert nicht."
 
-#: atmiral.sh:97
-#, sh-printf-format
+#: atmiral.sh:104
 msgid "Warning: File '%s' not found."
 msgstr "Warnung: Datei '%s' nicht gefunden."
 
-#: atmiral.sh:102
-#, sh-printf-format
+#: atmiral.sh:109
 msgid "Warning: File '%s' not readable."
 msgstr "Warnung: Datei '%s' nicht lesbar."
 
-#: atmiral.sh:145
-#, sh-printf-format
+#: atmiral.sh:152
 msgid "Warning: Unknown format on line %d: '%s'"
 msgstr "Warnung: Unbekanntes Format in Zeile %d: '%s'"
 
-#: atmiral.sh:155
-#, sh-printf-format
+#: atmiral.sh:162
 msgid "Warning: No valid entries found in '%s'."
 msgstr "Warnung: Keine gültigen Einträge in '%s' gefunden."
 
-#: atmiral.sh:198 atmiral.sh:210 atmiral.sh:222 atmiral.sh:235
+#: atmiral.sh:205 atmiral.sh:217 atmiral.sh:229 atmiral.sh:242
 msgid "Aborted."
 msgstr "Abgebrochen."
 
-#: atmiral.sh:199 atmiral.sh:211 atmiral.sh:223 atmiral.sh:236 atmiral.sh:272
+#: atmiral.sh:206 atmiral.sh:218 atmiral.sh:230 atmiral.sh:243 atmiral.sh:279
 msgid "Press enter to return..."
 msgstr "Drücke Enter um zurückzukehren..."
 
-#: atmiral.sh:217 atmiral.sh:230
-#, sh-printf-format
+#: atmiral.sh:224 atmiral.sh:237
 msgid "Please enter '%s':"
 msgstr "Bitte '%s' eingeben:"
 
-#: atmiral.sh:257
-#, sh-printf-format
+#: atmiral.sh:264
 msgid "Running: %s"
 msgstr "Starte: %s"
 
-#: atmiral.sh:264
+#: atmiral.sh:271
 msgid "Command executed successfully."
 msgstr "Befehl erfolgreich ausgeführt."
 
-#: atmiral.sh:268
-#, sh-printf-format
+#: atmiral.sh:275
 msgid "Error while executing command (Exit Code: %d)."
 msgstr "Fehler bei der Ausführung des Befehls (Exit-Code: %d)."
 
-#: atmiral.sh:281
-#, sh-printf-format
+#: atmiral.sh:288
 msgid "Error loading file:\\n%s"
 msgstr "Fehler beim Laden der Datei:\\n%s"
 
-#: atmiral.sh:287
-#, sh-printf-format
+#: atmiral.sh:294
 msgid "No valid entries in:\\n%s"
 msgstr "Keine gültigen Einträge in:\\n%s"
 
-#: atmiral.sh:304
+#: atmiral.sh:311
 msgid "List contents"
 msgstr "Listeninhalt"
 
-#: atmiral.sh:305 atmiral.sh:375 atmiralfm.sh:535
+#: atmiral.sh:312 atmiral.sh:382 atmiralfm.sh:544
 msgid "Select"
 msgstr "Auswählen"
 
-#: atmiral.sh:306 atmiral.sh:376 atmiralfm.sh:536
+#: atmiral.sh:313 atmiral.sh:383 atmiralfm.sh:545
 msgid "Exit"
 msgstr "Beenden"
 
-#: atmiral.sh:307 atmiral.sh:377
+#: atmiral.sh:314 atmiral.sh:384
 msgid ""
 "Please select an item and press enter to confirm, escape to exit ATMIRAL:"
 msgstr ""
 "Bitte einen Eintrag wählen und mit enter bestätigen, Escape zum Beenden von "
 "ATMIRAL:"
 
-#: atmiral.sh:308 atmiral.sh:319 atmiral.sh:378 atmiral.sh:389
+#: atmiral.sh:315 atmiral.sh:326 atmiral.sh:385 atmiral.sh:396
 msgid "..."
 msgstr "..."
 
-#: atmiral.sh:308 atmiral.sh:378 atmiralfm.sh:489
+#: atmiral.sh:315 atmiral.sh:385 atmiralfm.sh:498
 msgid "Parent level"
 msgstr "Eine Ebene höher"
 
-#: atmiral.sh:352 atmiral.sh:353
+#: atmiral.sh:359 atmiral.sh:360
 msgid "Folder: "
 msgstr "Ordner: "
 
-#: atmiral.sh:361 atmiral.sh:362
+#: atmiral.sh:368 atmiral.sh:369
 msgid "Programs from "
 msgstr "Programme aus "
 
-#: atmiral.sh:367
-#, sh-printf-format
+#: atmiral.sh:374
 msgid "No entries in directory:\\n%s"
 msgstr "Keine Einträge im Verzeichnis:\\n%s"
 
-#: atmiral.sh:374
+#: atmiral.sh:381
 msgid "Folder list"
 msgstr "Ordnerliste"
 
-#: atmiral.sh:413
+#: atmiral.sh:420
 msgid "Error while executing main menu."
 msgstr "Fehler beim Ausführen des Hauptmenüs."
 
-#: atmiral.sh:421 atmiralfm.sh:482
+#: atmiral.sh:428 atmiralfm.sh:491
 msgid "Exited ATMIRAL."
 msgstr "ATMIRAL beendet."
 
-#: atmiralfm.sh:72
+#: atmiralfm.sh:73
 msgid "Error: The file command is missing."
 msgstr "Fehler: Der File-Befehl ist nicht verfügbar."
 
-#: atmiralfm.sh:82
+#: atmiralfm.sh:86
 msgid "Yes"
 msgstr "Ja"
 
-#: atmiralfm.sh:83
+#: atmiralfm.sh:87
 msgid "No"
 msgstr "Nein"
 
-#: atmiralfm.sh:104
-#, sh-printf-format
+#: atmiralfm.sh:106
 msgid "Invalid exit code '%s'. It must be a positive integer."
 msgstr "Ungültiger Exit-Code '%s'. Es muss eine positive Ganzzahl sein."
 
-#: atmiralfm.sh:110
+#: atmiralfm.sh:112
 msgid "Command successful."
 msgstr "Befehl erfolgreich ausgeführt."
 
-#: atmiralfm.sh:113
+#: atmiralfm.sh:115
 msgid "Error executing command: General error."
 msgstr "Fehler beim Ausführen des Befehls: Allgemeiner Fehler."
 
-#: atmiralfm.sh:116
+#: atmiralfm.sh:118
 msgid "Error: Wrong usage of arguments."
 msgstr "Fehler: Falsche Verwendung von Argumenten."
 
-#: atmiralfm.sh:119
+#: atmiralfm.sh:121
 msgid "Error: Insufficient permissions."
 msgstr "Fehler: Ungenügende Berechtigung."
 
-#: atmiralfm.sh:122
+#: atmiralfm.sh:124
 msgid "Error: Command not found."
 msgstr "Fehler: Befehl nicht gefunden."
 
-#: atmiralfm.sh:125
-#, sh-printf-format
+#: atmiralfm.sh:127
 msgid "Error: Exit code '%d'"
 msgstr "Fehler: Exit-Code '%d'"
 
-#: atmiralfm.sh:137 atmiralfm.sh:306
+#: atmiralfm.sh:139 atmiralfm.sh:310
 msgid "File not found"
 msgstr "Datei nicht gefunden"
 
-#: atmiralfm.sh:146 atmiralfm.sh:159
-#, sh-printf-format
+#: atmiralfm.sh:148 atmiralfm.sh:162
 msgid "Broken link %s"
 msgstr "Defekter Link %s"
 
-#: atmiralfm.sh:162
+#: atmiralfm.sh:165
 msgid "Directory link"
 msgstr "Verzeichnislink"
 
-#: atmiralfm.sh:165
+#: atmiralfm.sh:168
 msgid "File link"
 msgstr "Dateilink"
 
-#: atmiralfm.sh:168 atmiralfm.sh:190 atmiralfm.sh:523
+#: atmiralfm.sh:171 atmiralfm.sh:193 atmiralfm.sh:532
 msgid "special file"
 msgstr "Spezielle Datei"
 
-#: atmiralfm.sh:175 atmiralfm.sh:357 atmiralfm.sh:442 atmiralfm.sh:511
+#: atmiralfm.sh:178 atmiralfm.sh:362 atmiralfm.sh:450 atmiralfm.sh:520
 msgid "Folder"
 msgstr "Ordner"
 
-#: atmiralfm.sh:178
+#: atmiralfm.sh:181
 msgid "Character device"
 msgstr "Zeichengerät"
 
-#: atmiralfm.sh:181
+#: atmiralfm.sh:184
 msgid "Block device"
 msgstr "Blockgerät"
 
-#: atmiralfm.sh:184
+#: atmiralfm.sh:187
 msgid "Named Pipe"
 msgstr "Named Pipe"
 
-#: atmiralfm.sh:187
+#: atmiralfm.sh:190
 msgid "Socket"
 msgstr "Socket"
 
-#: atmiralfm.sh:196 atmiralfm.sh:553
+#: atmiralfm.sh:199 atmiralfm.sh:562
 msgid "No read permission"
 msgstr "Keine Leseberechtigung"
 
-#: atmiralfm.sh:218
+#: atmiralfm.sh:221
 msgid "Timeout while getting file type"
 msgstr "Timeout bei Dateityp-Erkennung"
 
-#: atmiralfm.sh:314
+#: atmiralfm.sh:318
 msgid "Open directory"
 msgstr "Verzeichnis öffnen"
 
-#: atmiralfm.sh:315 atmiralfm.sh:345 atmiralfm.sh:412
+#: atmiralfm.sh:319 atmiralfm.sh:350 atmiralfm.sh:418
 msgid "Copy to"
 msgstr "Kopieren nach"
 
-#: atmiralfm.sh:316 atmiralfm.sh:346 atmiralfm.sh:428
+#: atmiralfm.sh:320 atmiralfm.sh:351 atmiralfm.sh:435
 msgid "Move to"
 msgstr "Verschieben nach"
 
-#: atmiralfm.sh:317 atmiralfm.sh:347 atmiralfm.sh:447
+#: atmiralfm.sh:321 atmiralfm.sh:352 atmiralfm.sh:455
 msgid "Delete"
 msgstr "Löschen"
 
-#: atmiralfm.sh:318 atmiralfm.sh:348 atmiralfm.sh:471
+#: atmiralfm.sh:322 atmiralfm.sh:353 atmiralfm.sh:480
 msgid "File info"
 msgstr "Datei-Info"
 
-#: atmiralfm.sh:325
-#, sh-printf-format
+#: atmiralfm.sh:330
 msgid "Open with %s as text"
 msgstr "Mit %s als Text öffnen"
 
-#: atmiralfm.sh:328 atmiralfm.sh:338
-#, sh-printf-format
+#: atmiralfm.sh:333 atmiralfm.sh:343
 msgid "View with %s"
 msgstr "Mit %s anzeigen"
 
-#: atmiralfm.sh:333
-#, sh-printf-format
+#: atmiralfm.sh:338
 msgid "Play with %s"
 msgstr "Mit %s abspielen"
 
-#: atmiralfm.sh:342
+#: atmiralfm.sh:347
 msgid "Run"
 msgstr "Ausführen"
 
-#: atmiralfm.sh:344 atmiralfm.sh:382
+#: atmiralfm.sh:349 atmiralfm.sh:387
 msgid "Open with"
 msgstr "Öffnen mit"
 
-#: atmiralfm.sh:359 atmiralfm.sh:444 atmiralfm.sh:525
+#: atmiralfm.sh:364 atmiralfm.sh:452 atmiralfm.sh:534
 msgid "File"
 msgstr "Datei"
 
-#: atmiralfm.sh:362
-#, sh-printf-format
+#: atmiralfm.sh:367
 msgid "%s: %s"
 msgstr "%s: %s"
 
-#: atmiralfm.sh:364
+#: atmiralfm.sh:369
 msgid "Please select an action and press enter to confirm:"
 msgstr "Bitte eine Aktion wählen und mit Enter bestätigen:"
 
-#: atmiralfm.sh:383
+#: atmiralfm.sh:388
 msgid "Please enter command (parameters allowed):"
 msgstr "Bitte Befehl eingeben (Parameter erlaubt):"
 
-#: atmiralfm.sh:407
+#: atmiralfm.sh:413
 msgid "Error: Input cannot be empty."
 msgstr "Fehler: Das Eingabefeld darf nicht leer sein."
 
-#: atmiralfm.sh:447
-#, sh-printf-format
+#: atmiralfm.sh:455
 msgid "Should %s '%s' be deleted?"
 msgstr "%s '%s' wirklich löschen?"
 
-#: atmiralfm.sh:465
-#, sh-printf-format
+#: atmiralfm.sh:474
 msgid "Path: %s"
 msgstr "Pfad: %s"
 
-#: atmiralfm.sh:467
-#, sh-printf-format
+#: atmiralfm.sh:476
 msgid "Type: %s"
 msgstr "Typ: %s"
 
-#: atmiralfm.sh:468
-#, sh-printf-format
+#: atmiralfm.sh:477
 msgid "File size: %s"
 msgstr "Dateigröße: %s"
 
-#: atmiralfm.sh:469
-#, sh-printf-format
+#: atmiralfm.sh:478
 msgid "Permissions: %s"
 msgstr "Berechtigungen: %s"
 
-#: atmiralfm.sh:509 atmiralfm.sh:521
+#: atmiralfm.sh:518 atmiralfm.sh:530
 msgid "symbolic link"
 msgstr "Symbolischer Link"
 
-#: atmiralfm.sh:532
+#: atmiralfm.sh:541
 msgid "ATMIRAL file browser"
 msgstr "ATMIRAL Dateibrowser"
 
-#: atmiralfm.sh:533
+#: atmiralfm.sh:542
 msgid "Actions"
 msgstr "Aktionen"
 
-#: atmiralfm.sh:534
+#: atmiralfm.sh:543
 msgid "Folder content"
 msgstr "Ordnerinhalt"
 
-#: atmiralfm.sh:538
+#: atmiralfm.sh:547
 msgid "Select an item with your arrow keys and use enter to confirm:"
 msgstr ""
 "Bitte einen Eintrag mit den Pfeiltasten wählen und mit Enter bestätigen:"
 
-#: atmiralfm.sh:571
+#: atmiralfm.sh:580
 msgid "No selection"
 msgstr "Keine Auswahl"
 
