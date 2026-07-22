@@ -1,0 +1,15 @@
+Source: atmiral
+Section: utils
+Priority: optional
+Maintainer: Steffen Schultz <steffenschultz@mailbox.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/schulle4u/atmiral
+
+Package: atmiral
+Architecture: all
+Depends: bash, dialog, gettext-base, file, coreutils, findutils, grep, sed, ${misc:Depends}
+Description: accessible text-based application menu for Linux
+ ATMIRAL provides a customizable terminal menu for launching commands and
+ applications. It also includes a dialog-based file browser.

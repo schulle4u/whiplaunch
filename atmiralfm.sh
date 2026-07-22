@@ -50,6 +50,7 @@ fi
 I18N_LIB="$SCRIPT_DIR/lib/i18n.sh"
 if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="$HOME/.local/share/atmiral/lib/i18n.sh"; fi
 if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="/usr/local/share/atmiral/lib/i18n.sh"; fi
+if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="/usr/share/atmiral/lib/i18n.sh"; fi
 if [[ ! -r "$I18N_LIB" ]]; then
     echo "Error: Cannot load the ATMIRAL gettext runtime." >&2
     exit 1

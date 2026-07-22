@@ -6,7 +6,9 @@ atmiral_init_i18n() {
     local script_dir="$1"
     local configured_language="${2:-}"
     export TEXTDOMAIN="$ATMIRAL_TEXTDOMAIN"
-    if [[ "$script_dir" == /usr/local/bin ]]; then
+    if [[ "$script_dir" == /usr/bin ]]; then
+        export TEXTDOMAINDIR="/usr/share/locale"
+    elif [[ "$script_dir" == /usr/local/bin ]]; then
         export TEXTDOMAINDIR="/usr/local/share/locale"
     elif [[ "$script_dir" == "$HOME/.local/bin" ]]; then
         export TEXTDOMAINDIR="$HOME/.local/share/locale"

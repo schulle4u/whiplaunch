@@ -45,6 +45,7 @@ fi
 I18N_LIB="$SCRIPT_DIR/lib/i18n.sh"
 if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="$HOME/.local/share/atmiral/lib/i18n.sh"; fi
 if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="/usr/local/share/atmiral/lib/i18n.sh"; fi
+if [[ ! -f "$I18N_LIB" ]]; then I18N_LIB="/usr/share/atmiral/lib/i18n.sh"; fi
 if [[ ! -r "$I18N_LIB" ]]; then
     echo "Error: Cannot load the ATMIRAL gettext runtime." >&2
     exit 1
@@ -86,6 +87,8 @@ elif [[ -d "$HOME/.local/share/atmiral/menu/" ]]; then
     MENUDIR="$HOME/.local/share/atmiral/menu/"
 elif [[ -d "/usr/local/share/atmiral/menu/" ]]; then
     MENUDIR="/usr/local/share/atmiral/menu/"
+elif [[ -d "/usr/share/atmiral/menu/" ]]; then
+    MENUDIR="/usr/share/atmiral/menu/"
 else
     MENUDIR="$SCRIPT_DIR/menu/"
 fi

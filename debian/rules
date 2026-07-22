@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+
+override_dh_auto_install:
+	install -D -m 0755 atmiral.sh debian/atmiral/usr/bin/atmiral
+	install -D -m 0755 atmiralfm.sh debian/atmiral/usr/bin/atmiralfm
+	install -D -m 0644 atmiral.conf debian/atmiral/etc/atmiral/atmiral.conf
+	install -D -m 0644 lib/i18n.sh debian/atmiral/usr/share/atmiral/lib/i18n.sh
+	install -D -m 0644 locale/de/LC_MESSAGES/atmiral.mo debian/atmiral/usr/share/locale/de/LC_MESSAGES/atmiral.mo
+	install -d -m 0755 debian/atmiral/usr/share/atmiral/menu
+	install -m 0644 menu/*.txt debian/atmiral/usr/share/atmiral/menu/
+
+override_dh_auto_test:
+	bash -n atmiral.sh atmiralfm.sh lib/i18n.sh build-deb.sh

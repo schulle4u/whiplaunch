@@ -1,0 +1,5 @@
+atmiral (1.0.0) unstable; urgency=medium
+
+  * Initial Debian package.
+
+ -- Steffen Schultz <steffenschultz@mailbox.org>  Wed, 22 Jul 2026 17:30:00 +0200

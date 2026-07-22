@@ -18,6 +18,23 @@ ATMIRAL (Abkürzung für "Accessible text-based menu interface for running appli
 
 ## Installation
 
+### Debian-Paket
+
+Auf Debian und abgeleiteten Distributionen kann ein systemweit installierbares
+Paket gebaut werden:
+
+```sh
+sudo apt install build-essential debhelper devscripts
+chmod +x build-deb.sh
+./build-deb.sh
+sudo apt install ./dist/atmiral_1.0.0_all.deb
+```
+
+Das Paket installiert Programme nach `/usr/bin`, Menüs und Übersetzungen nach
+`/usr/share` sowie die Konfiguration nach `/etc/atmiral/atmiral.conf`.
+
+### Installationsscript
+
 Das Repository clonen und `install.sh` ausführbar machen.
 
 ```

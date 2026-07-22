@@ -1,1 +1,9 @@
 *.bak
+
+dist/
+debian/.debhelper/
+debian/atmiral/
+debian/debhelper-build-stamp
+debian/files
+debian/*.debhelper.log
+debian/*.substvars
