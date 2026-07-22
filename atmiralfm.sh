@@ -10,7 +10,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default configuration values
 ATMIRAL_LANG=""
-COMMAND_DEBUG=0
 SHOW_HIDDEN=1
 DEFAULT_EDITOR="nano"
 DEFAULT_VIEWER="less"
