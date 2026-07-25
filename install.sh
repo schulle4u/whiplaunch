@@ -6,7 +6,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROGRAM_NAME="atmiral"
-VERSION="1.0.0"
+VERSION="0.2.0"
 
 # Colors for output
 RED='\033[0;31m'
